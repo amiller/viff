@@ -6,14 +6,14 @@ TODO list for pysmpc. Roughly ordered in order of priority.
    program start. Allow the user to specify another seed on the
    command line.
 
-* Rewrite runtime to facilitate unit tests
-   Deterministic unit test that does not use the network.
-
 * Benchmark Python vs. GMPY on different key sizes
    Initial tests seems to indicate that the network is the
    bottle-neck, but this should be systematically checked.
 
-* Profile and optimize.
+* Profile and optimize
+   We need to see if the time is spend on network latency or in the
+   CPU. If the latter is the case, then we could consider writing the
+   inner loop in C for more speed.
 
 * Remove program counters
    An idea for this was suggested by Thomas Mølhave: label each share
@@ -57,3 +57,9 @@ TODO list for pysmpc. Roughly ordered in order of priority.
 
 * Provide a small install-daimi.sh shell script which will set up
    PYTHONPATH corrrectly for people on DAIMI?
+
+* Add copyright and license information to files
+   As a starting point I intend to release pysmpc under the GNU GPL.
+
+* Merge GMPIntegerFieldElement and IntegerFieldElement?
+   The two classes are almost identical and should be merged.
