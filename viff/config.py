@@ -26,6 +26,7 @@ class Player:
     """Wrapper for information about a player in the protocol."""
 
     def __init__(self, id, host, port, keys=None, dealer_keys=None):
+        """Initialize a player."""
         self.id = id
         self.host = host
         self.port = port
@@ -34,6 +35,15 @@ class Player:
 
     # TODO: the PRFs ought to be cached
     def prfs(self, modulus):
+        """Retrieve PRSS PRFs.
+
+        The pseudo-random functions are used when this player is part
+        of a pseudo-random secret sharing for sharing an element
+        random to all players.
+
+        @return: mapping from player subsets to L{PRF} instances.
+        @returntype: L{dict} from L{frozenset} to L{PRF} instances.
+        """
         prfs = {}
         for subset, key in self.keys.iteritems():
             prfs[subset] = PRF(key, modulus)
@@ -41,6 +51,14 @@ class Player:
 
     # TODO: the PRFs ought to be cached
     def dealer_prfs(self, modulus):
+        """Retrieve dealer PRSS PRFs.
+
+        The pseudo-random functions are used when this player is the
+        dealer in a pseudo-random secret sharing.
+
+        @return: mapping from player subsets to L{PRF} instances.
+        @returntype: L{dict} from L{frozenset} to L{PRF} instances.
+        """
         dealers = {}
         for dealer, keys in self.dealer_keys.iteritems():
             prfs = {}
@@ -50,27 +68,34 @@ class Player:
         return dealers
 
     def __repr__(self):
+        """Simple string representation of the player."""
         return "<Player %d: %s:%d>" % (self.id, self.host, self.port)
 
-def s_str(subset):
-    return " ".join(map(str, subset))
-
-def s_unstr(str):
-    return frozenset(map(int, str.split()))
-
-def p_str(player):
-    return "Player " + str(player)
-
-def p_unstr(str):
-    return int(str[7:])
-
-def d_str(dealer):
-    return "Dealer " + str(dealer)
-
-def d_unstr(str):
-    return int(str[7:])
-
 def load_config(source):
+    """Load a player configuration file.
+
+    Configuration files are simple INI-files containing information
+    (hostname and port number) about the other players in the
+    protocol.
+
+    One of the players own the config file and for this player
+    additional information on PRSS keys is available.
+
+    @return: owner ID and a mapping of player IDs to players.
+    @returntype: C{int}, C{dict} from C{int} to L{Player} instances.
+    """
+    def s_unstr(str):
+        """Convert a string to a subset ID."""
+        return frozenset(map(int, str.split()))
+
+    def p_unstr(str):
+        """Convert a string to a player ID."""
+        return int(str[7:])
+
+    def d_unstr(str):
+        """Convert a string to a dealer ID."""
+        return int(str[7:])
+    
     if isinstance(source, ConfigObj):
         config = source
     else:
@@ -106,6 +131,19 @@ def load_config(source):
     return owner_id, players
 
 def generate_configs(n, t, addresses=None, prefix=None):
+    """Generate player configurations.
+
+    The configurations are returned as C{ConfigObj}s and can be saved
+    to disk if desired.
+
+    @param n: number of players.
+    @param t: threshold.
+    @param addresses: list of (host, port) pairs.
+    @param prefix: filename prefix.
+
+    @return: mapping from player id to player configuration.
+    @returntype: C{dict} from C{int} to C{ConfigObj}.
+    """    
     players = frozenset(range(1, n+1))
     max_unqualified_subsets = generate_subsets(players, n-t)
 
@@ -116,6 +154,18 @@ def generate_configs(n, t, addresses=None, prefix=None):
 
         # A SHA1 hash is 160 bit
         return hex(rand.randint(0, 2**160))
+
+    def s_str(subset):
+        """Convert a subset to a string."""
+        return " ".join(map(str, subset))
+
+    def p_str(player):
+        """Convert a player ID to a string."""
+        return "Player " + str(player)
+
+    def d_str(dealer):
+        """Convert a dealer ID to a string."""
+        return "Dealer " + str(dealer)
 
     configs = {}
     for p in players:
