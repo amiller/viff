@@ -19,14 +19,14 @@
 
 """Utility functions and classes used for testing."""
 
-from twisted.internet.defer import Deferred, gatherResults
+from twisted.internet.defer import Deferred, gatherResults, maybeDeferred
 from twisted.trial.unittest import TestCase
-from twisted.protocols.loopback import loopbackAsync
 
 from viff.runtime import Runtime, ShareExchanger, ShareExchangerFactory
 from viff.field import GF
 from viff.config import generate_configs, load_config
 from viff.util import rand
+from viff.test.loopback import loopbackAsync
 
 from random import Random
 
@@ -42,10 +42,23 @@ def protocol(method):
     The three runtimes are connected by L{create_loopback_runtime}.
     """
     def wrapper(self):
-        def cb_method(runtime):
-            return method(self, runtime)
 
-        for runtime in self.runtimes.itervalues():
+        def shutdown_protocols(result, runtime):
+            # TODO: this should use runtime.shutdown instead.
+            for protocol in runtime.protocols.itervalues():
+                protocol.loseConnection()
+            # If we were called as an errback, then returning the
+            # result signals the original error to Trial.
+            return result
+
+        def cb_method(runtime):
+            # Run the method with the runtime as argument:
+            result = maybeDeferred(method, self, runtime)
+            # Always call shutdown_protocols:
+            result.addBoth(shutdown_protocols, runtime)
+            return result
+
+        for runtime in self.runtimes:
             runtime.addCallback(cb_method)
 
         def unpack(failure):
@@ -64,62 +77,17 @@ def protocol(method):
             except AttributeError:
                 return failure
 
-        result = gatherResults(self.runtimes.values())
+        result = gatherResults(self.runtimes)
         result.addErrback(unpack)
-        return result
+        return gatherResults(self.close_sentinels)
 
     wrapper.func_name = method.func_name
     return wrapper
 
 
-def create_loopback_runtime(id, players, threshold, protocols):
-    """Create a L{Runtime} connected with a loopback.
-
-    This is used to connect Runtime instances without involving real
-    network traffic -- this is transparent to the Runtime.
-
-    @param id: ID of the player owning this Runtime.
-    @param players: player configuration.
-    @param threshold: security threshold.
-    @param protocols: dictionary containing already established
-    loopback connections.
-    """
-    # This will yield a Runtime when all protocols are connected.
-    result = Deferred()
-
-    # Create a runtime that knows about no other players than itself.
-    # It will eventually be returned in result when the factory has
-    # determined that all needed protocols are ready.
-    runtime = Runtime(players[id], threshold)
-    needed_protocols = len(players) - 1
-    factory = ShareExchangerFactory(runtime, players, needed_protocols, result)
-
-    for peer_id in players:
-        if peer_id != id:
-            protocol = ShareExchanger()
-            protocol.factory = factory
-
-            # Keys for when we are the client and when we are the server.
-            client_key = (id, peer_id)
-            server_key = (peer_id, id)
-            # Store a protocol used when we are the server.
-            protocols[server_key] = protocol
-
-            if peer_id > id:
-                # Make a "connection" to the other player. We are
-                # the client (because we initiate the connection)
-                # and the other player is the server.
-                client = protocols[client_key]
-                server = protocols[server_key]
-                loopbackAsync(server, client)
-
-    return result
-
 
 class RuntimeTestCase(TestCase):
 
-    #: Timeout in seconds per unit test.
-    timeout = 3
     #: Number of players to test.
     num_players = 3
     #: Shamir sharing threshold.
@@ -140,16 +108,76 @@ class RuntimeTestCase(TestCase):
         self.Zp = GF(30916444023318367583)
 
         configs = generate_configs(self.num_players, self.threshold)
-        protocols = {}
+        self.protocols = {}
         
         # initialize the dictionary of random generators
         seed = rand.random()
         self.shared_rand = dict([(player_id, Random(seed)) 
                   for player_id in range(1,self.num_players + 1)])
 
-        self.runtimes = {}
+        # This will be a list of Deferreds which will trigger when the
+        # virtual connections between the players are closed.
+        self.close_sentinels = []
+
+        self.runtimes = []
         for id in reversed(range(1, self.num_players+1)):
             _, players = load_config(configs[id])
-            self.runtimes[id] = create_loopback_runtime(id, players,
-                                                        self.threshold,
-                                                        protocols)
+            self.create_loopback_runtime(id, players)
+
+    def tearDown(self):
+        """Ensure that all protocol transports are closed.
+
+        This is normally done above when C{loseConnection} is called
+        on the protocols, but it may happen that a test case is
+        interrupted by a C{TimeoutError}, and so we do it here in all
+        cases to avoid leaving scheduled calls lying around in the
+        reactor.
+        """
+        for protocol in self.protocols.itervalues():
+            protocol.transport.close()
+
+    def create_loopback_runtime(self, id, players):
+        """Create a L{Runtime} connected with a loopback.
+
+        This is used to connect Runtime instances without involving real
+        network traffic -- this is transparent to the Runtime.
+
+        @param id: ID of the player owning this Runtime.
+        @param players: player configuration.
+        """
+        # This will yield a Runtime when all protocols are connected.
+        result = Deferred()
+
+        # Create a runtime that knows about no other players than itself.
+        # It will eventually be returned in result when the factory has
+        # determined that all needed protocols are ready.
+        runtime = Runtime(players[id], self.threshold)
+        factory = ShareExchangerFactory(runtime, players, result)
+        # We add the Deferred passed to ShareExchangerFactory and not
+        # the Runtime, since we want everybody to wait until all
+        # runtimes are ready.
+        self.runtimes.append(result)
+
+        for peer_id in players:
+            if peer_id != id:
+                protocol = ShareExchanger()
+                protocol.factory = factory
+
+                # Keys for when we are the client and when we are the server.
+                client_key = (id, peer_id)
+                server_key = (peer_id, id)
+                # Store a protocol used when we are the server.
+                self.protocols[server_key] = protocol
+
+                if peer_id > id:
+                    # Make a "connection" to the other player. We are
+                    # the client (because we initiate the connection)
+                    # and the other player is the server.
+                    client = self.protocols[client_key]
+                    server = self.protocols[server_key]
+                    # The loopback connection pumps data back and
+                    # forth, and when both sides has closed the
+                    # connection, then the returned Deferred will
+                    # fire.
+                    sentinel = loopbackAsync(server, client)
+                    self.close_sentinels.append(sentinel)
