@@ -993,7 +993,7 @@ class ActiveRuntime(Runtime):
             d = self.open(share_x - a)
             e = self.open(share_y - b)
 
-            # TODO: We ought to be able to simple do
+            # TODO: We ought to be able to simply do
             #
             #   return d*e + d*y + e*x + c
             #
@@ -1013,6 +1013,93 @@ class ActiveRuntime(Runtime):
         self.schedule_callback(triple, finish_mul)
         # We add the result to the chains in triple.
         triple.chainDeferred(result)
+        return result
+
+    @increment_pc
+    def single_share_random(self, T, degree, field):
+        """Share a random secret.
+
+        The guarantee is that a number of shares are made and out of
+        those, the T that are returned by this method will be correct
+        sharings of a random number using C{degree} as the polynomial
+        degree.
+
+        @param T: The number of shares output.
+        @param degree: The degree of the polynomial.
+        @param field: The field over which to share the secret.
+        """
+        # TODO: Move common code between single_share and
+        # double_share_random out to their own methods.
+        inputters = range(1, self.num_players + 1)
+        if self._hyper is None:
+            self._hyper = hyper(self.num_players, field)
+
+        # Generate a random element.
+        si = rand.randint(0, field.modulus - 1)
+
+        # Every player shares the random value with two thresholds.
+        shares = self.shamir_share(inputters, field, si, degree)
+
+        # Turn the shares into a column vector.
+        svec = Matrix([shares]).transpose()
+
+        # Apply the hyper-invertible matrix to svec1 and svec2.
+        rvec = (self._hyper * svec)
+
+        # Get back to normal lists of shares.
+        svec = svec.transpose().rows[0]
+        rvec = rvec.transpose().rows[0]
+
+        def verify(shares):
+            """Verify shares.
+
+            It is checked that they correspond to polynomial of the
+            expected degree.
+
+            If the verification succeeds, the T shares are returned,
+            otherwise the errback is called.
+            """
+            # TODO: This is necessary since shamir.recombine expects
+            # to receive a list of *pairs* of field elements.
+            shares = map(lambda (i, s): (field(i+1), s), enumerate(shares))
+
+            # Verify the sharings. If any of the assertions fail and
+            # raise an exception, the errbacks will be called on the
+            # share returned by single_share_random.
+            assert shamir.verify_sharing(shares, degree), "Could not verify"
+
+            # If we reach this point the n - T shares were verified
+            # and we can safely return the first T shares.
+            return rvec[:T]
+
+        def exchange(svec):
+            """Exchange and (if possible) verify shares."""
+            pc = tuple(self.program_counter)
+
+            # We send our shares to the verifying players.
+            for offset, share in enumerate(svec):
+                if T+1+offset != self.id:
+                    self.protocols[T+1+offset].sendShare(pc, share)
+
+            if self.id > T:
+                # The other players will send us their shares of si_1
+                # and si_2 and we will verify it.
+                si = []
+                for peer_id in inputters:
+                    if self.id == peer_id:
+                        si.append(Share(self, field, svec[peer_id - T - 1]))
+                    else:
+                        si.append(self._expect_share(peer_id, field))
+                result = gatherResults(si)
+                self.schedule_callback(result, verify)
+                return result
+            else:
+                # We cannot verify anything, so we just return the
+                # first T shares.
+                return rvec[:T]
+
+        result = gather_shares(svec[T:])
+        self.schedule_callback(result, exchange)
         return result
 
     @increment_pc
@@ -1142,25 +1229,28 @@ class ActiveRuntime(Runtime):
         t = self.threshold
         T = n - 2*t
 
-        # Generate normal random sharings.
-        a_t = [self.prss_share_random(field) for _ in range(T)]
-        b_t = [self.prss_share_random(field) for _ in range(T)]
-        c_2t = []
-        for i in range(T):
-            # Multiply a[i] and b[i] without resharing.
-            ci = gather_shares([a_t[i], b_t[i]])
-            ci.addCallback(lambda (ai, bi): ai * bi)
-            c_2t.append(ci)
+        def make_triple(shares):
+            a_t, b_t, (r_t, r_2t) = shares
 
-        def make_triple((r_t, r_2t)):
+            c_2t = []
+            for i in range(T):
+                # Multiply a[i] and b[i] without resharing.
+                ci = gather_shares([a_t[i], b_t[i]])
+                ci.addCallback(lambda (ai, bi): ai * bi)
+                c_2t.append(ci)
+
             d_2t = [c_2t[i] - r_2t[i] for i in range(T)]
             d = [self.open(d_2t[i], threshold=2*t) for i in range(T)]
             c_t = [r_t[i] + d[i] for i in range(T)]
             return zip(a_t, b_t, c_t)
 
-        double = self.double_share_random(T, t, 2*t, field)
-        self.schedule_callback(double, make_triple)
-        return double
+        single_a = self.single_share_random(T, t, field)
+        single_b = self.single_share_random(T, t, field)
+        double_c = self.double_share_random(T, t, 2*t, field)
+
+        result = gatherResults([single_a, single_b, double_c])
+        self.schedule_callback(result, make_triple)
+        return result
 
     @increment_pc
     def _broadcast(self, sender, message=None):
