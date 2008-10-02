@@ -1126,7 +1126,7 @@ def create_runtime(id, players, threshold, options=None, runtime_class=Runtime):
         # http://bugs.python.org/issue1375 since the start and stop
         # calls are in different stack frames.
         import hotshot
-        prof = hotshot.Profile("viff-%d.prof" % id)
+        prof = hotshot.Profile("player-%d.prof" % id)
         old_run = reactor.run
         def new_run(*args, **kwargs):
             print "Starting reactor with profiling"
@@ -1136,12 +1136,13 @@ def create_runtime(id, players, threshold, options=None, runtime_class=Runtime):
             import hotshot.stats
             print "Loading profiling statistics...",
             sys.stdout.flush()
-            stats = hotshot.stats.load("viff-%d.prof" % id)
+            stats = hotshot.stats.load("player-%d.prof" % id)
             print "done."
             print
             stats.strip_dirs()
             stats.sort_stats("time", "calls")
             stats.print_stats(40)
+            stats.dump_stats("player-%d.pstats" % id)
         reactor.run = new_run
 
     # This will yield a Runtime when all protocols are connected.
