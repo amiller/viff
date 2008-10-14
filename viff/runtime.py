@@ -41,7 +41,7 @@ from collections import deque
 from viff import shamir
 from viff.prss import prss, prss_lsb, prss_zero
 from viff.field import GF256, FieldElement
-from viff.util import wrapper, rand
+from viff.util import wrapper, rand, profile, deep_wait
 
 from twisted.internet import reactor
 from twisted.internet.error import ConnectionDone, CannotListenError
@@ -643,17 +643,6 @@ class BasicRuntime:
             # We concatenate the sub-lists in results.
             results = sum(results, [])
 
-            wait_list = []
-            for result in results:
-                # We allow pre-processing methods to return tuples of
-                # shares or individual shares as their result. Here we
-                # deconstruct result (if possible) and wait on its
-                # individual parts.
-                if isinstance(result, tuple):
-                    wait_list.extend(result)
-                else:
-                    wait_list.append(result)
-
             # The pool must map program counters to Deferreds to
             # present a uniform interface for the functions we
             # pre-process.
@@ -661,10 +650,11 @@ class BasicRuntime:
 
             # Update the pool with pairs of program counter and data.
             self._pool.update(zip(program_counters, results))
+
             # Return a Deferred that waits on the individual results.
             # This is important to make it possible for the players to
             # avoid starting before the pre-processing is complete.
-            return gatherResults(wait_list)
+            return deep_wait(results)
 
         wait_list = []
         for ((generator, args), program_counters) in program.iteritems():
@@ -759,6 +749,7 @@ class Runtime(BasicRuntime):
         if self.id in receivers:
             return result
 
+    @profile
     def add(self, share_a, share_b):
         """Addition of shares.
 
@@ -789,6 +780,7 @@ class Runtime(BasicRuntime):
         result.addCallback(lambda (a, b): a - b)
         return result
 
+    @profile
     @increment_pc
     def mul(self, share_a, share_b):
         """Multiplication of shares.
@@ -1158,14 +1150,19 @@ def create_runtime(id, players, threshold, options=None, runtime_class=Runtime):
                 self.id = id
                 ctx = SSL.Context(SSL.SSLv3_METHOD)
                 # TODO: Make the file names configurable.
-                ctx.use_certificate_file('player-%d.cert' % id)
-                ctx.use_privatekey_file('player-%d.key' % id)
-                ctx.check_privatekey()
-
-                ctx.load_verify_locations('ca.cert')
-                ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-                               lambda conn, cert, errnum, depth, ok: ok)
-                self.ctx = ctx
+                try:
+                    ctx.use_certificate_file('player-%d.cert' % id)
+                    ctx.use_privatekey_file('player-%d.key' % id)
+                    ctx.check_privatekey()
+                    ctx.load_verify_locations('ca.cert')
+                    ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
+                                   lambda conn, cert, errnum, depth, ok: ok)
+                    self.ctx = ctx
+                except SSL.Error, e:
+                    print "SSL errors - did you forget to generate certificates?"
+                    for (lib, func, reason) in e.args[0]:
+                        print "* %s in %s: %s" % (func, lib, reason)
+                    raise SystemExit("Stopping program")
 
             def getContext(self):
                 return self.ctx
