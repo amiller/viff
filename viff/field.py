@@ -32,6 +32,7 @@ Defining field elements:
 
 >>> x = Zp(10)
 >>> y = Zp(15)
+>>> z = Zp(1)
 
 Addition and subtraction (with modulo reduction):
 
@@ -39,6 +40,15 @@ Addition and subtraction (with modulo reduction):
 {6}
 >>> x - y
 {14}
+
+Bitwise xor for field elements:
+
+>>> z ^ z
+{0}
+>>> z ^ 0
+{1}
+>>> 1 ^ z
+{0}
 
 Exponentiation:
 
@@ -69,6 +79,7 @@ __docformat__ = "restructuredtext"
 
 
 from gmpy import mpz
+from math import log, ceil
 
 
 class FieldElement(object):
@@ -83,6 +94,25 @@ class FieldElement(object):
         return self.value
 
     __long__ = __int__
+
+    def split(self):
+        """Splits self into bit array LSB first.
+
+        >>> Zp = GF(29)
+        >>> Zp(3).split()
+        [{1}, {1}, {0}, {0}, {0}]
+        >>> Zp(28).split()
+        [{0}, {0}, {1}, {1}, {1}]
+        >>> GF256(8).split()
+        [[0], [0], [0], [1], [0], [0], [0], [0]]
+        """
+        length = int(ceil(log(self.modulus,2)))
+        result = [0] * length
+        temp = self.value
+        for i in range(length):
+            result[i] = self.field(temp % 2)
+            temp = temp // 2
+        return result
 
 #: Inversion table.
 #:
@@ -376,6 +406,20 @@ def GF(modulus):
         def __rsub__(self, other):
             """Subtraction (reflected argument version)."""
             return GFElement(other - self.value)
+
+        def __xor__(self, other):
+            """Xor for bitvalues."""
+            if not isinstance(other, (GFElement, int, long)):
+                return NotImplemented
+            try:
+                assert self.field is other.field, "Fields must be identical"
+                return GFElement(self.value ^ other.value)
+            except AttributeError:
+                return GFElement(self.value ^ other)
+
+        def __rxor__(self, other):
+            """Xor for bitvalues (reflected argument version)."""
+            return GFElement(other ^ self.value)
 
         def __mul__(self, other):
             """Multiplication."""
