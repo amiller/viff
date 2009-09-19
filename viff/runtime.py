@@ -407,25 +407,6 @@ class ShareExchangerFactory(ReconnectingClientFactory, ServerFactory):
         reason.trap(ConnectionDone)
 
 
-def increment_pc(method):
-    """Make *method* automatically increment the program counter.
-
-    Adding this decorator to a :class:`Runtime` method will ensure
-    that the program counter is incremented correctly when entering
-    the method.
-    """
-
-    @wrapper(method)
-    def inc_pc_wrapper(self, *args, **kwargs):
-        try:
-            self.program_counter[-1] += 1
-            self.program_counter.append(0)
-            return method(self, *args, **kwargs)
-        finally:
-            self.program_counter.pop()
-    return inc_pc_wrapper
-
-
 def preprocess(generator):
     """Track calls to this method.
 
@@ -623,7 +604,6 @@ class Runtime:
         dl = DeferredList(vars)
         self.schedule_callback(dl, lambda _: self.shutdown())
 
-    @increment_pc
     def schedule_callback(self, deferred, func, *args, **kwargs):
         """Schedule a callback on a deferred with the correct program
         counter.
@@ -637,7 +617,9 @@ class Runtime:
         Any extra arguments are passed to the callback as with
         :meth:`addCallback`.
         """
+        self.program_counter[-1] += 1
         saved_pc = self.program_counter[:]
+        saved_pc.append(0)
 
         @wrapper(func)
         def callback_wrapper(*args, **kwargs):
@@ -673,7 +655,6 @@ class Runtime:
         deferred.addCallback(queue_callback, self, fork)
         return self.schedule_callback(fork, func, *args, **kwargs)
 
-    @increment_pc
     def synchronize(self):
         """Introduce a synchronization point.
 
@@ -729,7 +710,6 @@ class Runtime:
         self._expect_data(peer_id, SHARE, share)
         return share
 
-    @increment_pc
     def preprocess(self, program):
         """Generate preprocess material.
 
@@ -868,7 +848,7 @@ class Runtime:
             self.depth_counter -= 1
             self.activation_counter = 0
 
-    def print_transferred_data():
+    def print_transferred_data(self):
         """Print the amount of transferred data for all connections."""
 
         for protocol in self.protocols.itervalues():
