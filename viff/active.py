@@ -19,7 +19,9 @@
 
 from math import ceil
 
-from twisted.internet.defer import gatherResults, Deferred, succeed
+from gmpy import numdigits
+
+from twisted.internet.defer import gatherResults, Deferred
 
 from viff import shamir
 from viff.util import rand
@@ -419,7 +421,7 @@ class TriplesPRSSMixin:
         result = self.generate_triples(field, quantity=1, gather=False)
         return result[0]
 
-    def generate_triples(self, field, quantity=20, gather=True):
+    def generate_triples(self, field, quantity=1, gather=True):
         """Generate *quantity* multiplication triples using PRSS.
 
         These are random numbers *a*, *b*, and *c* such that ``c =
@@ -428,7 +430,9 @@ class TriplesPRSSMixin:
         Returns a tuple with the number of triples generated and a
         Deferred which will yield a singleton-list with a 3-tuple.
         """
-        quantity = min(quantity, 20)
+
+        # This adjusted to the PRF based on SHA1 (160 bits).
+        quantity = min(quantity, max(int(160 /numdigits(field.modulus - 1, 2)), 1))
 
         a_t = self.prss_share_random_multi(field, quantity)
         b_t = self.prss_share_random_multi(field, quantity)
@@ -470,19 +474,15 @@ class BasicActiveRuntime(PassiveRuntime):
         Preprocessing: 1 multiplication triple.
         Communication: 2 openings.
         """
-        assert isinstance(share_x, Share) or isinstance(share_y, Share), \
-            "At least one of share_x and share_y must be a Share."
+        assert isinstance(share_x, Share), \
+            "share_x must be a Share."
 
-        if not isinstance(share_x, Share):
-            # Then share_y must be a Share => local multiplication. We
-            # clone first to avoid changing share_y.
-            result = share_y.clone()
-            result.addCallback(lambda y: share_x * y)
-            return result
         if not isinstance(share_y, Share):
-            # Likewise when share_y is a constant.
+            # Local multiplication. share_x always is a Share by
+            # operator overloading in Share. We clone share_x first
+            # to avoid changing it.
             result = share_x.clone()
-            result.addCallback(lambda x: x * share_y)
+            result.addCallback(lambda x: share_y * x)
             return result
 
         # At this point both share_x and share_y must be Share
