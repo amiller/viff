@@ -525,6 +525,11 @@ class Runtime:
                          help="Collect and print profiling information.")
         group.add_option("--track-memory", action="store_true",
                          help="Track memory usage over time.")
+        group.add_option("--statistics", action="store_true",
+                         help="Print statistics on shutdown.")
+        group.add_option("--no-socket-retry", action="store_true",
+                         default=False, help="Fail rather than keep retrying "
+                         "to connect if port is already in use.")
 
         try:
             # Using __import__ since we do not use the module, we are
@@ -539,7 +544,8 @@ class Runtime:
                             ssl=have_openssl,
                             deferred_debug=False,
                             profile=False,
-                            track_memory=False)
+                            track_memory=False,
+                            statistics=False)
 
     def __init__(self, player, threshold, options=None):
         """Initialize runtime.
@@ -1023,6 +1029,10 @@ def create_runtime(id, players, threshold, options=None, runtime_class=None):
     runtime = runtime_class(players[id], threshold, options)
     factory = ShareExchangerFactory(runtime, players, result)
 
+    if options and options.statistics:
+        reactor.addSystemEventTrigger("after", "shutdown",
+                                      runtime.print_transferred_data)
+
     if options and options.ssl:
         print "Using SSL"
         from twisted.internet.ssl import ContextFactory
@@ -1068,6 +1078,8 @@ def create_runtime(id, players, threshold, options=None, runtime_class=None):
         try:
             runtime.port = listen(port)
         except CannotListenError, e:
+            if options and options.no_socket_retry:
+                raise
             delay *= 1 + rand.random()
             print "Error listening on port %d: %s" % (port, e.socketError[1])
             print "Will try again in %d seconds" % delay
