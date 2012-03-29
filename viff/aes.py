@@ -115,6 +115,8 @@ class AES:
                 self.invert = self.invert_by_exponentiation_with_least_rounds
             elif use_exponentiation == "masked":
                 self.invert = self.invert_by_masked_exponentiation
+            elif use_exponentiation == "masked_online":
+                self.invert = self.invert_by_masked_exponentiation_online
             else:
                 self.invert = self.invert_by_exponentiation
         else:
@@ -127,7 +129,8 @@ class AES:
                                "shortest_sequential_chain",
                                "shortest_chain_with_least_rounds",
                                "chain_with_least_rounds",
-                               "masked"]
+                               "masked",
+                               "masked_online"]
 
     def invert_by_masking(self, byte):
         bits = bit_decompose(byte)
@@ -178,6 +181,21 @@ class AES:
         masked_byte = self.runtime.open(byte + random_powers[0])
         return self.runtime.schedule_callback(
             masked_byte, add_and_multiply, random_powers, prep)
+
+    # constants for efficient computation of x^2, x^4, x^8 etc.
+    powers_of_two = [[GF256(2**j)**(2**i) for j in range(8)] for i in range(8)]
+
+    def invert_by_masked_exponentiation_online(self, byte):
+        bits = bit_decompose(byte)
+        byte_powers = []
+
+        for i in range(1,8):
+            byte_powers.append(self.runtime.lin_comb(AES.powers_of_two[i], bits))
+
+        while len(byte_powers) > 1:
+            byte_powers.append(byte_powers.pop(0) * byte_powers.pop(0))
+
+        return byte_powers[0]
 
     def invert_by_exponentiation(self, byte):
         byte_2 = byte * byte
