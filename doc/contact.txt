@@ -15,7 +15,8 @@ low volume with at most a handful of mails per day.
 
 :viff-devel_: This list is for general questions and discussions on
   the development of VIFF. Unless you have a patch, you should send
-  your question here.
+  your question here. Please subscribe to the list *before* posting
+  because your post will end up in the spam limbo otherwise.
 
   Any question can be sent there --- VIFF is still a little rough
   around the edges, so please ask for help if you cannot get VIFF
