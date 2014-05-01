@@ -299,6 +299,9 @@ class ShareExchanger(Int16StringReceiver):
         a data part. The data is passed the appropriate Deferred in
         :class:`self.incoming_data`.
         """
+        # needed to make VIFF reactor work with later versions of Twisted
+        if 'recvd' not in self.__dict__:
+            self.recvd = self._unprocessed[self._compatibilityOffset:]
         if self.peer_id is None:
             # TODO: Handle ValueError if the string cannot be decoded.
             self.peer_id = int(string)
