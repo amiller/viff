@@ -301,7 +301,7 @@ class ShareExchanger(Int16StringReceiver):
         """
         # needed to make VIFF reactor work with later versions of Twisted
         if 'recvd' not in self.__dict__:
-            self.recvd = self._unprocessed[self._compatibilityOffset:]
+            self._unprocessed = self._unprocessed[self._compatibilityOffset:]
         if self.peer_id is None:
             # TODO: Handle ValueError if the string cannot be decoded.
             self.peer_id = int(string)
@@ -340,6 +340,8 @@ class ShareExchanger(Int16StringReceiver):
                     deq.append(data)
             except struct.error, e:
                 self.factory.runtime.abort(self, e)
+        if 'recvd' not in self.__dict__:
+            self.recvd = self._unprocessed
 
     def sendData(self, program_counter, data_type, data):
         """Send data to the peer.
