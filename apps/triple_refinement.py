@@ -7,7 +7,13 @@ from viff.field import GF
 from viff.runtime import (Runtime, create_runtime, make_runtime_class,
                           gather_shares)
 from viff.config import load_config
-from viff.util import dprint, find_prime
+from viff.util import dprint, find_prime, rand
+
+def _generate_triple(field):
+    a = rand.randint(0, field.modulus - 1)
+    b = rand.randint(0, field.modulus - 1)
+    c = a * b
+    return a,b,c
 
 #TODO These are temporary and are starting triples for the TripleRefinement
 # process. Only for testing.
@@ -19,16 +25,17 @@ precomputed_triples = [[2, 3, 6],
                        [2, 8, 16],
                        [2, 9, 18]]
 
-
 class Protocol:
 
-    def __init__(self, runtime):
+    def __init__(self, runtime, field):
         print("Connected to all parties.")
         self.runtime = runtime
+        self.field = field
 
         m, t, k, d = self.get_initial_parameters()
 
-        a, b, c = precomputed_triples[runtime.id - 1]
+        #a, b, c = precomputed_triples[runtime.id - 1]
+        a, b, c = _generate_triple(field)
 
         # Step 1
         a, b, c, x, y, z = self.rename_and_unpack_inputs(a, b, c, d)
@@ -79,9 +86,9 @@ class Protocol:
         return m, t, k, d
 
     def rename_and_unpack_inputs(self, a, b, c, d):
-        a = self.runtime.shamir_share(players, Zp, a)
-        b = self.runtime.shamir_share(players, Zp, b)
-        c = self.runtime.shamir_share(players, Zp, c)
+        a = self.runtime.shamir_share(players, self.field, a)
+        b = self.runtime.shamir_share(players, self.field, b)
+        c = self.runtime.shamir_share(players, self.field, c)
 
         x, y, z = a[d+1:], b[d+1:], c[d+1:]
         a, b, c = a[:d+1], b[:d+1], c[:d+1]
@@ -142,12 +149,12 @@ class Protocol:
             product = 1
             for j in range(n):
                 if i != j:
-                    product *= (float(k - x_values[j]) /
+                    product *= (self.field(k - x_values[j]) /
                                 (x_values[i] - x_values[j]))
 
             # print("Product", product)
             # print(y_values[i])
-            y = y + (y_values[i] * int(product))
+            y = y + (y_values[i] * product)
 
         # dprint("Y VALUE: %s", self.runtime.output(y))
         return y
@@ -175,7 +182,7 @@ Zp = GF(find_prime(options.modulus, blum=True))
 id, players = load_config(args[0])
 
 pre_runtime = create_runtime(id, players, options.threshold, options)
-pre_runtime.addCallback(Protocol)
+pre_runtime.addCallback(Protocol, Zp)
 pre_runtime.addErrback(errorHandler)
 
 # Start the Twisted event loop.
