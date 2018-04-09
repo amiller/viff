@@ -34,7 +34,7 @@ class Protocol:
 
         m, t, k, d = self.get_initial_parameters()
 
-        #a, b, c = precomputed_triples[runtime.id - 1]
+        # a, b, c = precomputed_triples[runtime.id - 1]
         a, b, c = _generate_triple(field)
 
         # Step 1
