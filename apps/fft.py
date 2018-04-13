@@ -4,7 +4,7 @@ import time
 
 def get_omega(p, n):
     """
-    Given a field of size p, this method returns the nth root of unity.
+    Given a field of size p, this method returns an nth root of unity.
     """
     x = random.randint(0, p-1)
     y = pow(x, (p-1)//n, p)
@@ -57,7 +57,7 @@ def test_correctness(coefficients, omega, fft_result, p):
     the polynomial at the coefficients.
 
     In order to save time, it verifies only 100 points from the FFT output
-    after evealuating them at the coefficients.
+    after evaluating them at the coefficients.
     """
     assert len(coefficients) == len(fft_result)
     n = len(fft_result)
@@ -76,7 +76,8 @@ def test_correctness(coefficients, omega, fft_result, p):
         print(c, "points verfied")
         assert y == fft_result[i]
 
-
+# This `r` is the order of BLS12-381, also the base field of 
+# the JubJub curve. `n` is a large power of 2 that divides `(r-1)` 
 r = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
 n = pow(2, 17)
 
