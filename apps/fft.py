@@ -24,6 +24,7 @@ def fft(n, A, omega, p):
     """
     # Check if n is a power of 2.
     x = len(A)
+    assert n == len(A)
     assert not (n & (n-1))
     assert not (x & (x-1))
 
