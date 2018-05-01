@@ -1,0 +1,9 @@
+*.pyc
+*~
+#*#
+apps/*.log
+charm/
+.vscode/
+*.ini
+*.pickle
+build/

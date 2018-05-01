@@ -516,6 +516,8 @@ class Runtime:
         group.add_option("-l", "--bit-length", type="int", metavar="L",
                          help=("Maximum bit length of input numbers for "
                                "comparisons."))
+        group.add_option("-t", "--threshold", type="int", dest="threshold",
+                         default=1, help="threshold for corrupt parties")
         group.add_option("-k", "--security-parameter", type="int", metavar="K",
                          help=("Security parameter. Comparisons will leak "
                                "information with probability 2**-K."))
