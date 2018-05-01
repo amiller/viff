@@ -10,7 +10,7 @@ from viff.config import load_config
 
 import random
 import sys
-import pickle
+import cPickle as pickle
 
 class SerializableShare(object):
 
