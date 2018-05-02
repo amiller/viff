@@ -72,13 +72,13 @@ class Protocol:
 
         for target in targets:
             initial_values = get_initial_values(runtime, self.Zp, k, target)
-            print "Length of initial values: ", len(initial_values)
+            # print "Length of initial values: ", len(initial_values)
             result = gather_shares(initial_values)
             result.addCallback(self.preprocess_ready, k, target)
 
 
     def preprocess_ready(self, results, k, target):
-        print "Ready for preprocessing!"
+        print "Ready for preprocessing for ", target
 
         prefix = results[0]
 
@@ -97,7 +97,7 @@ class Protocol:
         for m in range(2, k + 1):
             for n in range(0, m):
                 if m == 2 and n == 1:
-                    print "[ab] already calculated"
+                    print "[ab] already calculated!"
                 else:
                     if (m - n) != 1 :
                         sum_result = 0
@@ -116,12 +116,13 @@ class Protocol:
         final_field_elements = [matrix[i][0] for i in range(1, k + 1)]
         write_to_file(final_field_elements, self.runtime, self.Zp, suffix=str(target)+"-")
         print "Reconstruction finished for", target
+        print "#"*64
         self.iteration_complete()
 
 
     def iteration_complete(self):
         self.iterations_completed += 1
-        print "#"*30, self.iterations_completed, self.total_iterations
+        # print "#"*30, self.iterations_completed, self.total_iterations
         if self.iterations_completed == self.total_iterations:
             self.runtime.shutdown()
 
