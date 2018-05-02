@@ -22,7 +22,7 @@ class Protocol:
     the file in the write mode. In read mode the same shares are made available
     to the same player.
     """
-    def __init__(self, runtime, field, isReadMode):
+    def __init__(self, runtime, field, isReadMode, suffix):
         self.runtime = runtime
         self.field = field
 
@@ -44,7 +44,7 @@ class Protocol:
             print "Without gather_shares:", end-start2
         else:
             start = time.time()
-            shares = read_from_file(self.runtime)
+            shares = read_from_file(self.runtime, suffix)
             end = time.time()
             print "Reading shares from file:", end-start
             shares = map(runtime.open, shares)
@@ -79,9 +79,10 @@ if __name__ == "__main__":
     Zp = GF(0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001)
 
     # Pass 0 for reading shares from file, else pass anything to write
-    isReadMode = True if int(sys.argv[2]) == 0 else False
+    isReadMode = True if int(sys.argv[3]) == 0 else False
+    suffix = sys.argv[4] + "-"
 
-    pre_runtime.addCallback(Protocol, Zp, isReadMode)
+    pre_runtime.addCallback(Protocol, Zp, isReadMode, suffix)
     pre_runtime.addErrback(errorHandler)
 
     # Start the Twisted event loop.
