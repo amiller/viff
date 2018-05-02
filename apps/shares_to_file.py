@@ -11,12 +11,9 @@ from viff.config import load_config
 import random
 import sys
 import cPickle as pickle
+import time
 
-class SerializableShare(object):
-
-    def __init__(self, values, field_modulus):
-        self.values = values
-        self.field_modulus = field_modulus
+from ShareSerilializer import read_from_file, write_to_file
 
 
 class Protocol:
@@ -33,13 +30,23 @@ class Protocol:
 
         if not isReadMode:
             players = runtime.players.keys()
-            random_number = random.randint(0, field.modulus - 1)
-            print "Sharing Value: ", random_number
-            shares = runtime.shamir_share(players, field, random_number)
+            random_numbers = [random.randint(0, field.modulus - 1) for _ in range(1)]
+            print "Sharing Value: ", random_numbers
+            shares = []
+            for random_number in random_numbers:
+                shares.extend(runtime.shamir_share(players, field, random_number))
+            start = time.time()
             shares = gather_shares(shares)
-            shares.addCallback(self.__write_to_file)
+            start2 = time.time()
+            shares.addCallback(write_to_file, self.runtime, self.field)
+            end = time.time()
+            print "With gather_shares:", end-start
+            print "Without gather_shares:", end-start2
         else:
-            shares = self.__read_from_file()
+            start = time.time()
+            shares = read_from_file(self.runtime)
+            end = time.time()
+            print "Reading shares from file:", end-start
             shares = map(runtime.open, shares)
             shares = gather_shares(shares)
             shares.addCallback(self.__view_shares)
@@ -48,21 +55,8 @@ class Protocol:
         runtime.schedule_callback(shares, lambda _: runtime.shutdown())
 
     def __view_shares(self, output):
-        print "SHARES:", output 
+        print "SHARES:", output
 
-    def __read_from_file(self):
-        with open('share-' + str(self.runtime.id) + '.pickle', 'rb') as handle:
-            serializable_share = pickle.load(handle)
-            field = GF(serializable_share.field_modulus)
-            shares = [Share(self.runtime, field, field(value)) for value in serializable_share.values]
-            return shares
-
-    def __write_to_file(self, shares):
-        values = [share.value for share in shares]
-        serializable_share = SerializableShare(values, self.field.modulus)
-        with open('share-' + str(self.runtime.id) + '.pickle', 'wb') as handle:
-            pickle.dump(serializable_share, handle)
-        return shares
 
 def errorHandler(failure):
     print("Error: %s" % failure)
