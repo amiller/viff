@@ -4,3 +4,5 @@ clean:
 	rm -f power-mixing output
 test: clean all
 	./power-mixing < power-mixing.input
+benchmark: clean all
+	./power-mixing 10 1234
