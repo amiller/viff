@@ -5,14 +5,6 @@
 using namespace std;
 using namespace NTL;
 
-void print_vec(const Vec<ZZ_p> &data)
-{
-    for (auto i : data)
-    {
-        cout << i << endl;
-    }
-}
-
 Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k, const Vec<ZZ_p> &bs)
 {
     assert (bs.length() == k);
@@ -42,26 +34,9 @@ Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k, const Vec<ZZ_p> &
         DiagMinus1 = DiagM;
     }
 
-    Vec<ZZ_p> result;
-    result.SetLength(k);
-    for (int i = 1; i <= k; i++)
-    {
-        result[i-1] = apows[i];
-    }
-
-    return result;
-}
-
-Vec<ZZ_p> get_k_powers_of_b(const ZZ_p &b, const unsigned int &k)
-{
-    Vec<ZZ_p> bs;
-    bs.SetLength(k);
-    bs[0] = b;
-    for (unsigned int i = 1; i < k; i++)
-    {
-        bs[i] = bs[i-1]*b;
-    }
-    return bs;
+    // a^index
+    apows[0] = 1;
+    return apows;
 }
 
 /**
@@ -69,7 +44,7 @@ Vec<ZZ_p> get_k_powers_of_b(const ZZ_p &b, const unsigned int &k)
  * field_modulus: Modulus of the field.
  * a : Number whose powers need to be computed.
  * k : Number of powers to be computed.
- * bs : Pre computed powers of some random number.
+ * bs : k Pre computed powers of some random number.
  * */
 int main()
 {
@@ -93,7 +68,11 @@ int main()
     }
 
     auto apows = compute_powers(a, k, bs);
-    print_vec(apows);
+
+    for (int i = 1; i <= k; i++)
+    {
+        cout << apows[i] << endl;
+    }
 
     return 0;
 }
