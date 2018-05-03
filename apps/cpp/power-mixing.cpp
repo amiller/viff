@@ -1,6 +1,5 @@
 #include <NTL/ZZ_pXFactoring.h>
 #include <cassert>
-#include <stdio.h>
 
 using namespace std;
 using namespace NTL;
