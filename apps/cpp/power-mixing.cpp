@@ -7,12 +7,12 @@ using namespace std;
 using namespace NTL;
 using namespace std::chrono;
 
-Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k, const Vec<ZZ_p> &bs)
+Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k,
+                const Vec<ZZ_p> &bs, bool use_a_minus_b, ZZ_p a_minus_b)
 {
     assert (bs.length() == k);
 
-    ZZ_p b = bs[0];
-
+    a_minus_b = use_a_minus_b ? a_minus_b : a - bs[0];
     Vec<ZZ_p> apows;
     apows.SetLength(k+1);
     apows[0] = a;
@@ -29,7 +29,7 @@ Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k, const Vec<ZZ_p> &
         for (unsigned int i = 1; i <= m; i++)
         {
             sum += DiagMinus1[i-1];
-            DiagM[i] = (a-b) * sum + bs[m-1];
+            DiagM[i] = a_minus_b * sum + bs[m-1];
         }
 
         apows[m] = DiagM[m];
@@ -72,7 +72,7 @@ void benchmark(int seed, unsigned int k)
     cout << "Computed input powers!" << endl;
 
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    auto apows = compute_powers(a, k, bs);
+    auto apows = compute_powers(a, k, bs, false, ZZ_p(0));
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
     cout << "Total Time: " << duration_cast<microseconds>( t2 - t1 ).count()
@@ -88,35 +88,64 @@ void benchmark(int seed, unsigned int k)
     }
 }
 
+ZZ read_ZZ()
+{
+    string temp;
+    getline (cin, temp);
+    temp += "\0";
+    return conv<ZZ>(temp.c_str());
+}
+
+ZZ_p read_ZZ_p()
+{
+    string temp;
+    getline (cin, temp);
+    temp += "\0";
+    return conv<ZZ_p>(temp.c_str());
+}
+
+int read_int()
+{
+    string temp;
+    getline (cin, temp);
+    temp += "\0";
+    return atoi(temp.c_str());
+}
+
 /**
  * Input:
  * field_modulus: Modulus of the field.
  * a : Number whose powers need to be computed.
+ * a-b : Opened value of a - b
  * k : Number of powers to be computed.
  * bs : k Pre computed powers of some random number.
  * */
 void run_with_inputs()
 {
-    long field_modulus;
-    cin >> field_modulus;
+    ZZ field_modulus = read_ZZ();
+    // cout << "modulus: " << field_modulus << endl;
 
     // Initialize the field with the modulus.
     ZZ_p::init(ZZ(field_modulus));
 
-    ZZ_p a;
-    cin >> a;
+    ZZ_p a = read_ZZ_p();
+    // cout << "a: " << a << endl;
 
-    unsigned int k;
-    cin >> k;
+    ZZ_p a_minus_b = read_ZZ_p();
+
+    // Not doing a cin since the new line is causing issues.
+    unsigned int k = read_int();
+    // cout << "k: " << k << endl;
 
     Vec<ZZ_p> bs;
     bs.SetLength(k);
     for (int i = 0; i < k; i++)
     {
-        cin >> bs[i];
+        bs[i] = read_ZZ_p();
+        // cout << "bs[" << i << "] " << bs[i] << endl;
     }
 
-    auto apows = compute_powers(a, k, bs);
+    auto apows = compute_powers(a, k, bs, true, a_minus_b);
 
     for (int i = 1; i <= k; i++)
     {

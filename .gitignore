@@ -8,3 +8,5 @@ charm/
 *.pickle
 build/
 power-mixing
+*.input
+*.output
