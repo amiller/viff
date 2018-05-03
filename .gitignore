@@ -7,3 +7,4 @@ charm/
 *.ini
 *.pickle
 build/
+power-mixing
