@@ -1,18 +1,29 @@
 #include <NTL/ZZ_pXFactoring.h>
 #include <cassert>
 #include <chrono>
+#include <fstream>
+#include <sys/stat.h>
+#include <thread>
+#include <fcntl.h>
 
+
+#define THREAD_SLEEP_DURATION_IN_MS 100
+#define FIELD_MODULUS "15028799613985034465755506450771561352583254744125520"\
+                        "639296541195021"
+#define SUM_FILE_NAME "powers.sum"
+#define LOCK_FILE_NAME "lock.file"
 
 using namespace std;
 using namespace NTL;
 using namespace std::chrono;
+using namespace std::this_thread;
 
-Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k,
-                const Vec<ZZ_p> &bs, bool use_a_minus_b, ZZ_p a_minus_b)
+Vec<ZZ_p> ComputePowers(const ZZ_p &a, const unsigned int &k,
+                const Vec<ZZ_p> &bs, bool useAMinusB, ZZ_p aMinusB)
 {
     assert (bs.length() == k);
 
-    a_minus_b = use_a_minus_b ? a_minus_b : a - bs[0];
+    aMinusB = useAMinusB ? aMinusB : a - bs[0];
     Vec<ZZ_p> apows;
     apows.SetLength(k+1);
     apows[0] = a;
@@ -29,7 +40,7 @@ Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k,
         for (unsigned int i = 1; i <= m; i++)
         {
             sum += DiagMinus1[i-1];
-            DiagM[i] = a_minus_b * sum + bs[m-1];
+            DiagM[i] = aMinusB * sum + bs[m-1];
         }
 
         apows[m] = DiagM[m];
@@ -41,7 +52,7 @@ Vec<ZZ_p> compute_powers(const ZZ_p &a, const unsigned int &k,
     return apows;
 }
 
-Vec<ZZ_p> get_k_powers_of_b(const ZZ_p &b, const unsigned int &k)
+Vec<ZZ_p> GetKPowers(const ZZ_p &b, const unsigned int &k)
 {
     Vec<ZZ_p> bs;
     bs.SetLength(k);
@@ -53,29 +64,52 @@ Vec<ZZ_p> get_k_powers_of_b(const ZZ_p &b, const unsigned int &k)
     return bs;
 }
 
-void benchmark(int seed, unsigned int k)
+void CreateInputs(const unsigned int k, const unsigned int seed)
 {
     // Order of MNT224
-    string field_modulus_str = "150287996139850344657555064507715613525832547"
-        "44125520639296541195021";
-    ZZ field_modulus = conv<ZZ>(field_modulus_str.c_str());
+    ZZ fieldModulus = conv<ZZ>(FIELD_MODULUS);
 
     // Initialize the field with the modulus.
-    ZZ_p::init(field_modulus);
+    ZZ_p::init(fieldModulus);
 
     // Pass the same seed if you want to generate same random numbers.
     NTL::SetSeed(conv<ZZ>(seed));
-    ZZ_p a = conv<ZZ_p>(RandomBnd(field_modulus)) + 1;
-    ZZ_p b = conv<ZZ_p>(RandomBnd(field_modulus)) + 1;
+    ZZ_p a = conv<ZZ_p>(RandomBnd(fieldModulus)) + 1;
+    ZZ_p b = conv<ZZ_p>(RandomBnd(fieldModulus)) + 1;
 
-    Vec<ZZ_p> bs = get_k_powers_of_b(b, k);
+    Vec<ZZ_p> bs = GetKPowers(b, k);
+
+    cout << fieldModulus << endl;
+    cout << a << endl;
+    cout << (a-b) << endl;
+    cout << k << endl;
+    for (auto i : bs)
+    {
+        cout << i << endl;
+    }
+}
+
+void Benchmark(int seed, unsigned int k)
+{
+    // Order of MNT224
+    ZZ fieldModulus = conv<ZZ>(FIELD_MODULUS);
+
+    // Initialize the field with the modulus.
+    ZZ_p::init(fieldModulus);
+
+    // Pass the same seed if you want to generate same random numbers.
+    NTL::SetSeed(conv<ZZ>(seed));
+    ZZ_p a = conv<ZZ_p>(RandomBnd(fieldModulus)) + 1;
+    ZZ_p b = conv<ZZ_p>(RandomBnd(fieldModulus)) + 1;
+
+    Vec<ZZ_p> bs = GetKPowers(b, k);
     cout << "Computed input powers!" << endl;
 
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    auto apows = compute_powers(a, k, bs, false, ZZ_p(0));
+    auto apows = ComputePowers(a, k, bs, false, ZZ_p(0));
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
-    cout << "Total Time: " << duration_cast<microseconds>( t2 - t1 ).count()
+    cout << "Total Time: " << duration_cast<microseconds>(t2 - t1).count()
         << " microseconds!" << endl;
 
     cout << "a: " << a << endl;
@@ -88,83 +122,193 @@ void benchmark(int seed, unsigned int k)
     }
 }
 
-ZZ read_ZZ()
+ZZ ReadZZ(istream& stream)
 {
     string temp;
-    getline (cin, temp);
+    getline (stream, temp);
     temp += "\0";
     return conv<ZZ>(temp.c_str());
 }
 
-ZZ_p read_ZZ_p()
+ZZ_p ReadZZ_p(istream& stream)
 {
     string temp;
-    getline (cin, temp);
+    getline (stream, temp);
     temp += "\0";
     return conv<ZZ_p>(temp.c_str());
 }
 
-int read_int()
+int ReadInt(istream& stream)
 {
     string temp;
-    getline (cin, temp);
+    getline (stream, temp);
     temp += "\0";
     return atoi(temp.c_str());
 }
 
+inline bool DoesFileExist (const std::string& name)
+{
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
+
+void WritePowersToFile(Vec<ZZ_p> apows, const ZZ& fieldModulus,
+                        const unsigned int& k)
+{
+    bool isExistingFile = DoesFileExist(SUM_FILE_NAME);
+    ios_base::openmode mode = (isExistingFile ? ios::in | ios::out : ios::out);
+
+    fstream sumFile(SUM_FILE_NAME, mode);
+
+    // If file exists, read and sum powers.
+    if (isExistingFile)
+    {
+        ZZ modulus_in_file = ReadZZ(sumFile);
+        // cout << "Modulus in file: " << modulus_in_file << endl;
+        unsigned int k_in_file = ReadInt(sumFile);
+        // cout << "k: " << k << endl;
+        assert (modulus_in_file == fieldModulus);
+        assert (k == k_in_file);
+
+        // Sum the powers.
+        for (int idx = 1; idx <= k; idx++)
+        {
+            ZZ_p powerSum = ReadZZ_p(sumFile);
+            // cout << idx << "\t" << powerSum << endl;
+            apows[idx] += powerSum;
+        }
+
+        // Go to beginning of the file.
+        sumFile.clear();
+        sumFile.seekg(0, ios::beg);
+    }
+
+    sumFile << fieldModulus << endl;
+    sumFile << k << endl;
+
+    for (int i = 1; i <= k; i++)
+    {
+        sumFile << apows[i] << endl;
+    }
+
+    // Close the file.
+    sumFile.close();
+}
+
+/**
+ * This method uses a lock file. It takes a lock on the lock file and then
+ * writes on the original file. Locking will not work if the original file is
+ * modified by some other process which doesn't take a lock on the same lock
+ * file.
+ * */
+void WriteUsingLockFile(Vec<ZZ_p> apows, const ZZ& fieldModulus,
+                        const unsigned int& k)
+{
+    //Declare and set up a flock object from fcntl.
+    struct flock outputFileLock;
+    outputFileLock.l_type = F_WRLCK; /* Write lock */
+    outputFileLock.l_whence = SEEK_SET;
+    outputFileLock.l_start = 0;
+    outputFileLock.l_len = 0; /* Lock whole file */
+
+    // Open lock file in write mode and request lock.
+    FILE * outputFile = fopen(LOCK_FILE_NAME, "w");
+    if (outputFile == NULL)
+    {
+        cout << "Something bad happened\n";
+        exit(1);
+    }
+
+    // Get file descriptor associated with file handle.
+    int fd = fileno(outputFile);
+
+    // Request the lock.  We will wait forever until we get the lock.
+    if (fcntl(fd, F_SETLKW, &outputFileLock) == -1)
+	{
+        cout << "ERROR: could not obtain lock on " << outputFile << '\n';
+        exit(1);
+	}
+
+    WritePowersToFile(apows, fieldModulus, k);
+
+    // Release lock and close file.
+    outputFileLock.l_type = F_UNLCK;
+    if (fcntl(fd, F_UNLCK, &outputFileLock) == -1)
+	{
+	    cout << "ERROR: could not release lock on " << outputFile << '\n';
+        exit(1);
+ 	}
+
+    fclose(outputFile);
+}
+
 /**
  * Input:
- * field_modulus: Modulus of the field.
+ * fieldModulus: Modulus of the field.
  * a : Number whose powers need to be computed.
  * a-b : Opened value of a - b
  * k : Number of powers to be computed.
  * bs : k Pre computed powers of some random number.
  * */
-void run_with_inputs()
+void RunWithInputs(const string& inputFileName)
 {
-    ZZ field_modulus = read_ZZ();
-    // cout << "modulus: " << field_modulus << endl;
+    ifstream inputFile(inputFileName);
+
+    ZZ fieldModulus = ReadZZ(inputFile);
+    // cout << "modulus: " << fieldModulus << endl;
 
     // Initialize the field with the modulus.
-    ZZ_p::init(ZZ(field_modulus));
+    ZZ_p::init(ZZ(fieldModulus));
 
-    ZZ_p a = read_ZZ_p();
+    ZZ_p a = ReadZZ_p(inputFile);
     // cout << "a: " << a << endl;
 
-    ZZ_p a_minus_b = read_ZZ_p();
+    ZZ_p aMinusB = ReadZZ_p(inputFile);
 
     // Not doing a cin since the new line is causing issues.
-    unsigned int k = read_int();
+    unsigned int k = ReadInt(inputFile);
     // cout << "k: " << k << endl;
 
     Vec<ZZ_p> bs;
     bs.SetLength(k);
     for (int i = 0; i < k; i++)
     {
-        bs[i] = read_ZZ_p();
+        bs[i] = ReadZZ_p(inputFile);
         // cout << "bs[" << i << "] " << bs[i] << endl;
     }
 
-    auto apows = compute_powers(a, k, bs, true, a_minus_b);
+    inputFile.close();
 
-    for (int i = 1; i <= k; i++)
-    {
-        cout << apows[i] << endl;
-    }
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    auto apows = ComputePowers(a, k, bs, true, aMinusB);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    // cout << "Powers computed" << endl;
+
+    high_resolution_clock::time_point t3 = high_resolution_clock::now();
+    WriteUsingLockFile(apows, fieldModulus, k);
+    high_resolution_clock::time_point t4 = high_resolution_clock::now();
+
+    // cout << "Time taken to compute powers: "
+    //     <<  (float)duration_cast<microseconds>(t2 - t1).count()/1000000
+    //     << " seconds!" << endl;
+
+    // cout << "Time taken to write file: "
+    //     <<  (float)duration_cast<microseconds>(t4 - t3).count()/1000000
+    //     << " seconds!" << endl;
 }
-
 
 int main(int argc, char* argv[])
 {
-    if (argc==1)
+    if (argc == 2)
     {
-        run_with_inputs();
+        RunWithInputs(string(argv[1]));
     }
     else if (argc == 3)
     {
         unsigned int k = atoi(argv[1]);
         unsigned int seed = atoi(argv[2]);
-        benchmark(seed, k);
+        CreateInputs(k, seed);
+        // Benchmark(seed, k);
     }
 
     return 0;

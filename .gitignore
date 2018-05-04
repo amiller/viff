@@ -10,3 +10,4 @@ build/
 power-mixing
 *.input
 *.output
+powers.sum
