@@ -3,7 +3,6 @@
 #include <chrono>
 #include <fstream>
 #include <sys/stat.h>
-#include <thread>
 #include <fcntl.h>
 
 
@@ -16,7 +15,6 @@
 using namespace std;
 using namespace NTL;
 using namespace std::chrono;
-using namespace std::this_thread;
 
 Vec<ZZ_p> ComputePowers(const ZZ_p &a, const unsigned int &k,
                 const Vec<ZZ_p> &bs, bool useAMinusB, ZZ_p aMinusB)
@@ -122,7 +120,7 @@ void Benchmark(int seed, unsigned int k)
     }
 }
 
-ZZ ReadZZ(istream& stream)
+inline ZZ ReadZZ(istream& stream)
 {
     string temp;
     getline (stream, temp);
@@ -130,7 +128,7 @@ ZZ ReadZZ(istream& stream)
     return conv<ZZ>(temp.c_str());
 }
 
-ZZ_p ReadZZ_p(istream& stream)
+inline ZZ_p ReadZZ_p(istream& stream)
 {
     string temp;
     getline (stream, temp);
@@ -138,7 +136,7 @@ ZZ_p ReadZZ_p(istream& stream)
     return conv<ZZ_p>(temp.c_str());
 }
 
-int ReadInt(istream& stream)
+inline int ReadInt(istream& stream)
 {
     string temp;
     getline (stream, temp);

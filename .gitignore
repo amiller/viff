@@ -7,7 +7,7 @@ charm/
 *.ini
 *.pickle
 build/
-power-mixing
+compute-power-sums
 *.input
 *.output
 powers.sum
