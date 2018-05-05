@@ -92,7 +92,6 @@ class Protocol:
             r.addCallback(_random_ready, i)
 
         # Wait for all the shares then write to file
-        print self.output_shares
 	result = gather_shares(self.output_shares)        
 	result.addCallback(self.write_to_file, field.modulus, k)
         runtime.schedule_callback(result, lambda _: runtime.synchronize())
