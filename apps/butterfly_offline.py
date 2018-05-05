@@ -79,7 +79,10 @@ def record_stop():
     print "*" * 64
     #return x
 
-Zp = GF(find_prime(2**256, blum=True))
+# BN254
+prime = 16283262548997601220198008118239886027035269286659395419233331082106632227801L
+Zp = GF(prime)
+#Zp = GF(find_prime(2**256, blum=True))
 
 
 class OfflineProtocol:
@@ -89,7 +92,7 @@ class OfflineProtocol:
 	self.runtime = runtime
 	self.ramdom_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
 	self.triggers = [Share(self.runtime,Zp) for i in range(self.k * int(math.log(self.k,2)))]
-	self.p = find_prime(2**256, blum=True)
+	self.p = prime
 	print self.p
 
 	n = self.runtime.num_players
