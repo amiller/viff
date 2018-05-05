@@ -116,6 +116,8 @@ class OfflineProtocol:
 	list = [self.triggers[i] for i in range(self.k * int(math.log(self.k,2)))]
 	result = gather_shares(list)
 	result.addCallback(self.preprocess_ready)
+        runtime.schedule_callback(result, lambda _: runtime.synchronize())
+        runtime.schedule_callback(result, lambda _: runtime.shutdown())
 
  
 	
@@ -134,8 +136,8 @@ class OfflineProtocol:
 	print "preprocess_ready"
 	self.write_to_file(self.ramdom_shares)
 	record_stop()
-        results = self.runtime.synchronize()
-        self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
+        #results = self.runtime.synchronize()
+        #self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
 	'''
 	for i in range(self.k * int(math.log(self.k,2))): 
