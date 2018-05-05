@@ -1,33 +1,5 @@
 #!/usr/bin/env python
 
-# Copyright 2007, 2008 VIFF Development Team.
-#
-# This file is part of VIFF, the Virtual Ideal Functionality Framework.
-#
-# VIFF is free software: you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License (LGPL) as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# VIFF is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General
-# Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with VIFF. If not, see <http://www.gnu.org/licenses/>.
-
-# This example is a tribute to the original example of secure
-# multi-party computation by Yao in 1982. In his example two
-# millionaires meet in the street and they want to securely compare
-# their fortunes. They want to do so without revealing how much they
-# own to each other. This problem would be easy to solve if both
-# millionaires trust a common third party, but we want to solve it
-# without access to a third party.
-#
-# In this example the protocol is run between three millionaires and
-# uses a protocol for secure integer comparison by Toft from 2005.
-#
 # Give a player configuration file as a command line argument or run
 # the example with '--help' for help with the command line options.
 
@@ -91,7 +63,7 @@ class OfflineProtocol:
     def __init__(self, runtime):
 	self.k = 128
 	self.runtime = runtime
-	self.ramdom_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
+	self.random_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
 	self.triggers = [Share(self.runtime,Zp) for i in range(self.k * int(math.log(self.k,2)))]
 	self.p = prime
 	print self.p
@@ -129,26 +101,26 @@ class OfflineProtocol:
 	#print ""caculating shares
 	v = result**((-(self.p+1)/4)%(self.p - 1))
         
-	self.ramdom_shares[i] = r * v
+	self.random_shares[i] = r * v
 	self.triggers[i].callback(1)
 	
     def preprocess_ready(self,result):
 	print "preprocess_ready"
-	self.write_to_file(self.ramdom_shares)
+	self.write_to_file(self.random_shares)
 	record_stop()
         #results = self.runtime.synchronize()
         #self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
 	'''
 	for i in range(self.k * int(math.log(self.k,2))): 
-		open_1= self.runtime.open(self.ramdom_shares[i])
+		open_1= self.runtime.open(self.random_shares[i])
 		
 		open_1.addCallback(self.plainprint)
 	'''
 
-    def write_to_file(self,shares):
+    def write_to_file(self, shares):
 	#print "here"
-	filename = "party" + str(self.runtime.id) + "_butterfly_random_share"
+	filename = "precompute-butterfly-N%d-t%d-k%d-id%d.share" % (self.runtime.num_players, self.threshold, self.k, self.runtime.id)
 	
 	FD = open(filename, "w")
 
