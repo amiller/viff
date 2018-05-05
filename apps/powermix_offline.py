@@ -86,10 +86,8 @@ class Protocol:
 
             def _random_ready(r,i):
                 # Compute all powers
-                print 'random ready:', r
                 rs = k_powers_of(r[0], self.k)
                 for j,power in enumerate(rs):
-                    print 'addcallback:', i*self.k+j
                     power.addCallback(self.output_shares[i*self.k+j].callback)
             r.addCallback(_random_ready, i)
 
