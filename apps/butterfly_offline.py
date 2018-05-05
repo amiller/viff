@@ -41,14 +41,9 @@ from random import randint
 import time
 import math
 from viff.runtime import create_runtime, gather_shares,Share,make_runtime_class
-from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
-from fft import fft
-import sys
-from helperfunctions import interpolate_poly
-
 
 import sys
 sys.setrecursionlimit(2000000)
@@ -79,10 +74,16 @@ def record_stop():
     print "*" * 64
     #return x
 
-# BN254
-prime = 16283262548997601220198008118239886027035269286659395419233331082106632227801L
+# MNT224
+#prime = 15028799613985034465755506450771561352583254744125520639296541195021L
+# JubJub
+#prime = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001L
+prime = find_prime(2**256, blum=True)
 Zp = GF(prime)
-#Zp = GF(find_prime(2**256, blum=True))
+
+# TODO: implement general case of sqrt
+#def cipolla(v):
+# pass
 
 
 class OfflineProtocol:
@@ -94,6 +95,7 @@ class OfflineProtocol:
 	self.triggers = [Share(self.runtime,Zp) for i in range(self.k * int(math.log(self.k,2)))]
 	self.p = prime
 	print self.p
+        assert self.p % 4 == 3, "Need efficient square roots"
 
 	n = self.runtime.num_players
 	t = self.runtime.threshold
@@ -124,6 +126,7 @@ class OfflineProtocol:
     def calculate_share(self,result,r,i):
 	#print ""caculating shares
 	v = result**((-(self.p+1)/4)%(self.p - 1))
+        
 	self.ramdom_shares[i] = r * v
 	self.triggers[i].callback(1)
 	
@@ -165,7 +168,7 @@ def errorHandler(failure):
 
 # Parse command line arguments.
 parser = OptionParser()
-Toft05Runtime.add_options(parser)
+BasicActiveRuntime.add_options(parser)
 options, args = parser.parse_args()
 
 if len(args) == 0:
