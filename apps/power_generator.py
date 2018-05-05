@@ -6,11 +6,10 @@ from viff.active import ActiveRuntime
 from viff.field import GF
 import time
 from viff.runtime import create_runtime, gather_shares, make_runtime_class, Share
-from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
-from ShareSerilializer import write_to_file
+from ShareSerializer import write_to_file
 
 import sys
 sys.setrecursionlimit(2000000)
@@ -56,11 +55,18 @@ def calculation_ready(results):
     print "Ready to print!"
     print results
 
-class Protocol:
+prime = find_prime(2**256, blum=True)
+Zp = GF(prime)
+
+class OfflineProtocol:
 
     def __init__(self, runtime):
         self.runtime = runtime
         self.Zp = GF(find_prime(2**64))
+
+	self.p = prime
+	print self.p
+        assert self.p % 4 == 3, "Need efficient square roots"
 
         # Number of powers to compute
         k = 64
@@ -132,7 +138,6 @@ def errorHandler(failure):
 
 # Parse command line arguments.
 parser = OptionParser()
-Toft05Runtime.add_options(parser)
 options, args = parser.parse_args()
 
 if len(args) == 0:
@@ -144,7 +149,7 @@ else:
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
 pre_runtime = create_runtime(id, players, 1, options, runtime_class=runtime_class)
-pre_runtime.addCallback(Protocol)
+pre_runtime.addCallback(OfflineProtocol)
 pre_runtime.addErrback(errorHandler)
 
 # Start the Twisted event loop.
