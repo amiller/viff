@@ -18,3 +18,4 @@ python powermixing_online_phase3.py --no-ssl player-$n.ini $k
 cp party$n-powermixing-online-phase3-output solver_phase4/party$n-powermixing-online-phase3-output
 cd solver_phase4
 python3 solver.py $n
+cp party$n-finaloutput ../party$n-finaloutput

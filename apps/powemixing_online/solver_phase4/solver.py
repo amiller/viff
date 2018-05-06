@@ -60,12 +60,23 @@ def load_input_from_file(id):
 		line = FD.readline()  
 		i = i + 1
 	return inputs
+def create_output(result,party_id):
+
+
+	filename = "party" + str(party_id) + "-finaloutput"
+	FD = open(filename, "w")
+	content = ""
+	for share in result:
+		content = content + str(share) + "\n"
+	FD.write(content)
+	FD.close()
+	
 if __name__=="__main__":
 	party_id = sys.argv[1]
 	inputs = load_input_from_file(party_id)
 	print(inputs)
 	result = solve(inputs)
-	print(result)
+	create_output(result,party_id)
 
 
 
