@@ -3,13 +3,13 @@ note: $n is id of the party
 
 -Input file format:
 (1). input file for input share
-name:party$n_input
+name:party$n-input
 content:
 line1: k
 line2 - end : one share per line
 
 (2).input files for input precomputed powers.
-name:precomputed_party$n.share
+name:precomputed-party$n.share
 note: here for benchmarking I used the same precomputed b for all shares. while in normal use we need to provide k such files and name format would be "precomputed_party$n_$i.share" which $i is the i-th precomputed powers.
 
 content:
@@ -20,9 +20,9 @@ line3 - end: one share per line
 
 -Output file format:
 
-a folder created:party$n_powermixing_online_phase1_output
+a folder created:party$n-powermixing-online-phase1-output
 files in folder:
-name:powermixing_online_phase1_output$i
+name:powermixing-online-phase1-output$i
 
 content:
 line 1: field
@@ -42,8 +42,8 @@ line2: k
 line3 to end: one [sum] per line
 
 3.powermixing_online_phase3.py:
-input: powers.sum
-output:"party$n_powermixing_online_phase3_output"
+input: powers.sum$n
+output:"party$n-powermixing-online-phase3-output"
 content:
 line 1: field
 line 2: k
@@ -51,7 +51,9 @@ line 3 to end: one sum per line
 
 4.solver:
 
-input:"party$n_powermixing_online_phase3_output"
-outputs: final mixing set.
+input:"party$n-powermixing-online-phase3-output"
+outputs: final mixing set. party$n-finalset.
+
+
 
 
