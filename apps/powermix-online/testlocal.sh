@@ -16,6 +16,7 @@ cp party$n-powermixing-online-phase3-output solver_phase4/party$n-powermixing-on
 cd solver_phase4
 python3 solver.py $n
 cp party$n-finaloutput ../party$n-finaloutput
+cd ..
 
 rm -r -f phase2-party$n
 rm -r -f party$n-powermixing-online-phase1-output
