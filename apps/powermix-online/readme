@@ -1,5 +1,5 @@
 How to run:
-1. install flint in your machine.
+1. install cffi,gmp and flint in your machine.
 2. go to solver_phase4 folder and run "python3 solver_build.py"
 3. provide input file for input share and for input preconputed powers as described later.
 4. run "sh runlocal.sh"
