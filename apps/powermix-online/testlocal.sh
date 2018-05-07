@@ -1,11 +1,7 @@
 #!/bin/sh 
 k=$1
 n=$2
-rm -r -f phase2-party$n
-rm -r -f party$n-powermixing-online-phase1-output
-rm -f party$n-powermixing-online-phase3-output
-rm -f powers.sum$i
-rm -f /solver_phase4/party$n-powermixing-online-phase3-output
+
 
 
 python powermixing_online_phase1.py --no-ssl player-$n.ini $k
@@ -20,3 +16,9 @@ cp party$n-powermixing-online-phase3-output solver_phase4/party$n-powermixing-on
 cd solver_phase4
 python3 solver.py $n
 cp party$n-finaloutput ../party$n-finaloutput
+
+rm -r -f phase2-party$n
+rm -r -f party$n-powermixing-online-phase1-output
+rm -f party$n-powermixing-online-phase3-output
+rm -f powers.sum$i
+rm -f /solver_phase4/party$n-powermixing-online-phase3-output

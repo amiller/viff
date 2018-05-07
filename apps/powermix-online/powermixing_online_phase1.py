@@ -16,9 +16,8 @@ from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
-from fft import fft
+
 import sys
-from helperfunctions import interpolate_poly
 
 import os
 import sys
@@ -59,16 +58,21 @@ class OnlineProtocol:
 	self.inputs = [0 for _ in range(self.k)]
 	self.p = find_prime(2**256, blum=True)
 	self.Zp = GF(self.p)
-	self.open_value= [0 for _ in range(self.k)]
+	self.a_minus_b = [0 for _ in range(self.k)]
 	self.precomputed_powers = [[0 for _ in range(self.k )] for _ in range(self.k)]
 
 	# load -1/1 shares from file
 	self.load_input_from_file(self.k,self.p)
 
 	for i in range(self.k):
-		self.open_value[i] = self.runtime.open(self.inputs[i])
-	#print self.open_value
-	result = gather_shares(self.open_value)
+		#TODO: here for testing we use same random b, in the future we need to change this to:
+		#self.load_share_from_file(self.k,self.p,i)
+		self.load_share_from_file(self.k,self.p,i)
+
+	for i in range(self.k):
+		self.a_minus_b[i] = self.runtime.open(self.inputs[i] - self.precomputed_powers[i][0])
+	#print self.a_minus_b
+	result = gather_shares(self.a_minus_b)
 	result.addCallback(self.create_output)
 	#self.runtime.schedule_callback(results, lambda _: self.runtime.synchronize())
         #self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
@@ -78,16 +82,16 @@ class OnlineProtocol:
 	#print result
 
     def load_input_from_file(self,k,p):
-	filename = "powers.sum" + str(self.runtime.id)
+	filename = "party" + str(self.runtime.id) + "-input"
 	
 	FD = open(filename, "r")
 	line = FD.readline()
-	if int(line) != p:
-		print "p dismatch!! p in file is %d"%(int(line))
-	line = FD.readline()
 	if int(line) != k:
 		print "k dismatch!! k in file is %d"%(int(line))
-
+	line = FD.readline()
+	if int(line) != p:
+		print "prime dismatch!! prime in file is %d"%(int(line))
+	self.Zp = GF(p)
 
 	line = FD.readline()
 	i = 0
@@ -98,21 +102,46 @@ class OnlineProtocol:
 		line = FD.readline()  
 		i = i + 1
 
+    def load_share_from_file(self,k,p,row,cnt = 1):
+	#TODO: 
+	#filename = "precompute-party%d-%d.share" % (self.runtime.num_players, self.runtime.threshold, self.k, self.runtime.id,cnt)
+	filename = "precompute-party%d.share" % (self.runtime.id)
+	FD = open(filename, "r")
+	line = FD.readline()
+	if int(line) != p:
+		print "p dismatch!! p in file is %d"%(int(line))
+	line = FD.readline()
+	if int(line) != k:
+		print "k dismatch!! k in file is %d"%(int(line))
+	self.Zp = GF(p)
+
+	line = FD.readline()
+	i = 0
+	while line and i < self.k:
+		#print i
+		self.precomputed_powers[row][i] = Share(self.runtime,self.Zp,self.Zp(int(line)))
+
+		line = FD.readline()  
+		i = i + 1
 
     def create_output(self,result):
 
+	path = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output"
+	folder = os.path.exists(path)  
+	if not folder:                  
+		os.makedirs(path) 
 
-	filename = "party" + str(self.runtime.id) + "-powermixing-online-phase3-output"
+	for i in range(self.k):
+		filename = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output/powermixing-online-phase1-output" + str(i+1)
 
-	FD = open(filename, "w")
+		FD = open(filename, "w")
 
-	content =  str(self.p) + "\n" + str(self.k) + "\n"
-
-	for share in self.open_value:
-		content = content + str(share.result)[1:-1] + "\n"
-	FD.write(content)
-	FD.close()
-
+		content =  str(self.p) + "\n" + str(self.inputs[i].result)[1:-1] + "\n" + str(self.a_minus_b[i].result)[1:-1] + "\n" + str(self.k) + "\n"
+	
+		for share in self.precomputed_powers[i]:
+			content = content + str(share.result)[1:-1] + "\n"
+		FD.write(content)
+		FD.close()
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
@@ -128,6 +157,7 @@ if len(args) == 0:
 else:
     id, players = load_config(args[0])
 k = int(sys.argv[3])
+print k
 # Create a deferred Runtime and ask it to run our protocol when ready.
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
