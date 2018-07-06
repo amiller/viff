@@ -1,7 +1,7 @@
 #!/bin/sh 
 k=$1
 n=$2
-
+cd ~/viff/apps/powermix-online/
 python powermixing_online_phase1.py --no-ssl player-$n.ini $k
 cd cpp_phase2
 sh run-compute-power-sums-online.sh $k $n
