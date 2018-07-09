@@ -16,7 +16,8 @@ note: $n is id of the party
 name:party$n-input
 content:
 line1: k
-line2 - end : one share per line
+line2: field
+line3 - end : one share per line
 
 (2).input files for input precomputed powers.
 name:precomputed-party$n.share
