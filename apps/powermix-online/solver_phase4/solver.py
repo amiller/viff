@@ -74,7 +74,7 @@ def create_output(result,party_id):
 if __name__=="__main__":
 	party_id = sys.argv[1]
 	inputs = load_input_from_file(party_id)
-	print(inputs)
+	#print(inputs)
 	result = solve(inputs)
 	create_output(result,party_id)
 
