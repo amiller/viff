@@ -1,5 +1,4 @@
-make clean;
-make;
+
 k=$1;
 id=$2;
 n=$(lscpu -p | grep -c "^[0-9]");
