@@ -4,8 +4,8 @@ import sys
 def _int2hexbytes(n):
     return bytes(hex(n), 'ascii')[2:]
 
-# 2**160 - 47
-P = 1461501637330902918203684832716283019655932542929
+
+P = 115792089237316195423570985008687907853269984665640564039457584007913129640423
 _HEX_P = _int2hexbytes(P)
 
 _C_RET_INVALID = 1
@@ -74,7 +74,7 @@ def create_output(result,party_id):
 if __name__=="__main__":
 	party_id = sys.argv[1]
 	inputs = load_input_from_file(party_id)
-	print(inputs)
+	#print(inputs)
 	result = solve(inputs)
 	create_output(result,party_id)
 
