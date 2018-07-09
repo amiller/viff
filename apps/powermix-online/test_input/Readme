@@ -1,0 +1,3 @@
+There are three folders here containing input for 32 secrets,64 secrets and 256 secrets.
+For example, if you want to test powermixing online phase with 64 inputs, you should copy 6 file in "64input" folder, paste it to the parent folder "powermix-online", then push the change to github.
+Then you should go to ec2 folder(it is not in this repo),change the number in line 52 of "run-powerming-online-ec2.py" to be 64, then run "python run-powerming-online-ec2.py".
