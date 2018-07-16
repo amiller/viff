@@ -36,10 +36,11 @@ def record_start():
 
 
 def record_stop():
-
+    global start
     stop = time.time()
     print
     print "Total time used: %.3f sec" % (stop-start)
+    start = stop
     '''
     if runtime.id == 1:
         f = open('time.txt', 'w')
@@ -47,6 +48,7 @@ def record_stop():
         f.close()
     '''
     print "*" * 64
+
     #return x
 
 
@@ -60,10 +62,11 @@ class OnlineProtocol:
 	self.Zp = GF(self.p)
 	self.open_value= [0 for _ in range(self.k)]
 	self.precomputed_powers = [[0 for _ in range(self.k )] for _ in range(self.k)]
-
-	# load -1/1 shares from file
+	record_start()
+	# load shares from file
 	self.load_input_from_file(self.k,self.p)
-
+	print "load input finished"
+	record_stop()
 	for i in range(self.k):
 		self.open_value[i] = self.runtime.open(self.inputs[i])
 	#print self.open_value
@@ -100,7 +103,8 @@ class OnlineProtocol:
 
     def create_output(self,result):
 
-
+	print "value open finished"
+	record_stop()
 	filename = "party" + str(self.runtime.id) + "-powermixing-online-phase3-output"
 
 	FD = open(filename, "w")
@@ -111,7 +115,8 @@ class OnlineProtocol:
 		content = content + str(share.result)[1:-1] + "\n"
 	FD.write(content)
 	FD.close()
-
+	print "file outputs finished"
+	record_stop()
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
