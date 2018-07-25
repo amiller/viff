@@ -120,7 +120,7 @@ class OfflineProtocol:
 
     def write_to_file(self, shares):
 	#print "here"
-	filename = "precompute-butterfly-N%d-t%d-k%d-id%d.share" % (self.runtime.num_players, self.threshold, self.k, self.runtime.id)
+	filename = "precompute-butterfly-N%d-t%d-k%d-id%d.share" % (self.runtime.num_players, self.runtime.threshold, self.k, self.runtime.id)
 	
 	FD = open(filename, "w")
 
