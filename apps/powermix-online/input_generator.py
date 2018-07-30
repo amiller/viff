@@ -92,7 +92,7 @@ class Protocol:
 
         # Wait for all the shares then write to file
 	result = gather_shares(self.output_shares)        
-	result.addCallback(self.write_to_file, k)
+	result.addCallback(self.write_to_file,field.modulus,k)
         runtime.schedule_callback(result, lambda _: runtime.synchronize())
         runtime.schedule_callback(result, lambda _: runtime.shutdown())
 
@@ -100,10 +100,10 @@ class Protocol:
         print results
 
 
-    def write_to_file(self, shares, k):
+    def write_to_file(self, shares, p, k):
 	record_stop()
         print 'Done!'#, shares
-        lines = [k] + [i.value for i in shares[:]]
+        lines = [k,p] + [i.value for i in shares[:]]
         # print lines
 	filename = "party%d-input" % (self.runtime.id)
         with open(filename, "w") as handle:
