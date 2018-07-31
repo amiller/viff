@@ -70,7 +70,9 @@ class Protocol:
         # TODO: fix
         assert B==1, "TODO: B>1 seems to hang..."
 
-
+    n = self.runtime.num_players
+    t = self.runtime.threshold
+        T = n - 2*t
         record_start()
 
         self.output_shares = [Share(None,field) for _ in range(k * B)]
