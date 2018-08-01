@@ -5,6 +5,6 @@ cd ~/viff/apps/powermix-online/
 
 export PYTHONPATH=$PYTHONPATH:$HOME/opt/lib/python
 
-python preinput_generator.py --no-ssl player-$n.ini $k
 python input_generator.py --no-ssl player-$n.ini $k
+python preinput_generator.py --no-ssl player-$n.ini $k
 cd ~
