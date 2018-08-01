@@ -69,18 +69,20 @@ class Protocol:
 
         # TODO: fix
         assert B==1, "TODO: B>1 seems to hang..."
+        
 
-        n = self.runtime.num_players
-        t = self.runtime.threshold
+    n = self.runtime.num_players
+    t = self.runtime.threshold
         T = n - 2*t
+
         record_start()
 
         self.output_shares = [Share(None,field) for _ in range(k * B)]
 
         # Generate k random values
-	for i in range(self.B):
+    for i in range(self.B):
             # Generate a random power
-	    r = self.runtime.single_share_random(T,t,field)
+        r = self.runtime.single_share_random(T,t,field)
 
             def _random_ready(r,i):
                 # Compute all powers
@@ -90,21 +92,27 @@ class Protocol:
             r.addCallback(_random_ready, i)
 
         # Wait for all the shares then write to file
-	result = gather_shares(self.output_shares)        
-	result.addCallback(self.write_to_file, field.modulus, k)
+    result = gather_shares(self.output_shares)        
+    result.addCallback(self.write_to_file, field.modulus, k)
         runtime.schedule_callback(result, lambda _: runtime.synchronize())
         runtime.schedule_callback(result, lambda _: runtime.shutdown())
 
     def view(self, results):
         print results
 
+    def read_from_file(self):
+        with open("shares-"+str(self.runtime.id)+".output", "r") as handle:
+            elements = handle.readlines()
+            elements = map(field, [int(i.strip()) for i in elements])
+            # print elements
+            return [Share(self.runtime, self.field, i) for i in elements]
 
     def write_to_file(self, shares, modulus, k):
-	record_stop()
+    record_stop()
         print 'Done!'#, shares
         lines = [modulus, k] + [i.value for i in shares[:]]
         # print lines
-	filename = "precompute-party%d.share" % (self.runtime.id)
+    filename = "precompute-party%d.share" % (self.runtime.id)
         with open(filename, "w") as handle:
             for line in lines:
                 handle.write("{}\n".format(line))
