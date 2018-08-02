@@ -50,7 +50,7 @@ from twisted.internet.defer import Deferred, DeferredList, gatherResults
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.protocol import ReconnectingClientFactory, ServerFactory
 from twisted.protocols.basic import Int16StringReceiver
-
+data_cnt = 0
 
 class Share(Deferred):
     """A shared number.
@@ -266,6 +266,11 @@ def gather_shares(shares):
     share_list.addCallback(filter_results)
     return share_list
 
+def get_bandwidth():
+
+    global data_cnt
+    
+    return data_cnt
 
 class ShareExchanger(Int16StringReceiver):
     """Send and receive shares.
@@ -359,8 +364,10 @@ class ShareExchanger(Int16StringReceiver):
         The program counter takes up ``4 * pc_size`` bytes, the data
         takes up ``data_size`` bytes.
         """
+    global data_cnt
         pc_size = len(program_counter)
         data_size = len(data)
+    data_cnt = data_cnt + data_size
         fmt = "!HHB%dI%ds" % (pc_size, data_size)
         t = (pc_size, data_size, data_type) + program_counter + (data,)
         packet = struct.pack(fmt, *t)
@@ -1126,6 +1133,8 @@ def create_runtime(id, players, threshold, options=None, runtime_class=None):
 
     return result
 
+
 if __name__ == "__main__":
     import doctest    #pragma NO COVER
     doctest.testmod() #pragma NO COVER
+
