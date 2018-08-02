@@ -156,6 +156,7 @@ class OnlineProtocol:
 	FD.write(content)
 	FD.close()
 	print a
+	self.runtime.print_transferred_data()
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
