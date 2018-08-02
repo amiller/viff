@@ -11,7 +11,7 @@ from viff.field import GF
 from random import randint
 import time
 import math
-from viff.runtime import create_runtime, gather_shares,Share,make_runtime_class,get_bandwidth
+from viff.runtime import create_runtime, gather_shares,Share,make_runtime_class
 from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
@@ -36,10 +36,11 @@ def record_start():
 
 
 def record_stop():
-
+    global start
     stop = time.time()
     print
     print "Total time used: %.3f sec" % (stop-start)
+    start = stop
     '''
     if runtime.id == 1:
         f = open('time.txt', 'w')
@@ -48,6 +49,7 @@ def record_stop():
     '''
     print "*" * 64
     #return x
+
 
 
 class OnlineProtocol:
@@ -60,7 +62,7 @@ class OnlineProtocol:
 	self.Zp = GF(self.p)
 	self.a_minus_b = [0 for _ in range(self.k)]
 	self.precomputed_powers = [[0 for _ in range(self.k )] for _ in range(self.k)]
-
+	record_start()
 	# load -1/1 shares from file
 	self.load_input_from_file(self.k,self.p)
 
@@ -68,11 +70,12 @@ class OnlineProtocol:
 		#TODO: here for testing we use same random b, in the future we need to change this to:
 		#self.load_share_from_file(self.k,self.p,i)
 		self.load_share_from_file(self.k,self.p,i)
-	print "haha"
+	print "load input finished"
+	record_stop()
+
 	for i in range(self.k):
 		self.a_minus_b[i] = self.runtime.open(self.inputs[i] - self.precomputed_powers[i][0])
 	#print self.a_minus_b
-
 	result = gather_shares(self.a_minus_b)
 	result.addCallback(self.create_output)
 	#self.runtime.schedule_callback(results, lambda _: self.runtime.synchronize())
@@ -112,8 +115,8 @@ class OnlineProtocol:
 	if int(line) != p:
 		print "p dismatch!! p in file is %d"%(int(line))
 	line = FD.readline()
-	if int(line) != k:
-		print "k dismatch!! k in file is %d"%(int(line))
+	#if int(line) != k:
+	#	print "k dismatch!! k in file is %d"%(int(line))
 	self.Zp = GF(p)
 
 	line = FD.readline()
@@ -126,7 +129,8 @@ class OnlineProtocol:
 		i = i + 1
 
     def create_output(self,result):
-
+	print "a-b calculation finished"
+	record_stop()
 	path = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output"
 	folder = os.path.exists(path)  
 	if not folder:                  
@@ -143,10 +147,8 @@ class OnlineProtocol:
 			content = content + str(share.result)[1:-1] + "\n"
 		FD.write(content)
 		FD.close()
-
-	a = get_bandwidth()
-
-        print a
+	print "output to file finished"
+	record_stop()
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 

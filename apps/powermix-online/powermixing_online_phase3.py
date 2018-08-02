@@ -11,7 +11,7 @@ from viff.field import GF
 from random import randint
 import time
 import math
-from viff.runtime import create_runtime, gather_shares,Share,make_runtime_class
+from viff.runtime import create_runtime, gather_shares,Share,make_runtime_class,get_bandwidth
 from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
@@ -117,6 +117,8 @@ class OnlineProtocol:
 	FD.close()
 	print "file outputs finished"
 	record_stop()
+	a = get_bandwidth()
+	print a
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
