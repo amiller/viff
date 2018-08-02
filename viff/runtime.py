@@ -364,10 +364,10 @@ class ShareExchanger(Int16StringReceiver):
         The program counter takes up ``4 * pc_size`` bytes, the data
         takes up ``data_size`` bytes.
         """
-    global data_cnt
+        global data_cnt
         pc_size = len(program_counter)
         data_size = len(data)
-    data_cnt = data_cnt + data_size
+        data_cnt = data_cnt + data_size
         fmt = "!HHB%dI%ds" % (pc_size, data_size)
         t = (pc_size, data_size, data_type) + program_counter + (data,)
         packet = struct.pack(fmt, *t)
