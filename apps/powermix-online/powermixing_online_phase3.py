@@ -118,6 +118,11 @@ class OnlineProtocol:
 	print "file outputs finished"
 	record_stop()
 	a = get_bandwidth()
+	filename = "bandwidth_record3"
+	FD = open(filename, "w")
+	content = str(a)
+	FD.write(content)
+	FD.close()
 	print a
    	results = self.runtime.synchronize()
         self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
