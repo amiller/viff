@@ -33,7 +33,7 @@ def record_start():
 
 
 def record_stop():
-
+    global start
     stop = time.time()
     print
     print "Total time used: %.3f sec" % (stop-start)
@@ -44,6 +44,7 @@ def record_stop():
         f.close()
     '''
     print "*" * 64
+    start = stop
     #return x
 
 # MNT224
@@ -106,8 +107,12 @@ class OfflineProtocol:
 	
     def preprocess_ready(self,result):
 	print "preprocess_ready"
-	self.write_to_file(self.random_shares)
 	record_stop()
+	print "write to file"
+	self.write_to_file(self.random_shares)
+	print "finish writting"
+	record_stop()
+	self.runtime.print_transferred_data()
         #results = self.runtime.synchronize()
         #self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
@@ -120,7 +125,7 @@ class OfflineProtocol:
 
     def write_to_file(self, shares):
 	#print "here"
-	filename = "precompute-butterfly-N%d-t%d-k%d-id%d.share" % (self.runtime.num_players, self.runtime.threshold, self.k, self.runtime.id)
+	filename = "party" + str(self.runtime.id) + "_butterfly_random_share"
 	
 	FD = open(filename, "w")
 
