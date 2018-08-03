@@ -60,8 +60,8 @@ Zp = GF(prime)
 
 class OfflineProtocol:
     # this is only for testing generating random -1/1 shares.
-    def __init__(self, runtime):
-	self.k = 128
+    def __init__(self, runtime, k):
+	self.k = k
 	self.runtime = runtime
 	self.random_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
 	self.triggers = [Share(self.runtime,Zp) for i in range(self.k * int(math.log(self.k,2)))]
@@ -149,12 +149,12 @@ if len(args) == 0:
     parser.error("you must specify a config file")
 else:
     id, players = load_config(args[0])
-
+k = int(sys.argv[3])
 # Create a deferred Runtime and ask it to run our protocol when ready.
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
 pre_runtime = create_runtime(id, players, 1, options, runtime_class=runtime_class)
-pre_runtime.addCallback(OfflineProtocol)
+pre_runtime.addCallback(OfflineProtocol,k)
 pre_runtime.addErrback(errorHandler)
 
 # Start the Twisted event loop.

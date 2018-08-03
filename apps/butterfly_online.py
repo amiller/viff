@@ -82,8 +82,8 @@ def record_stop():
 
 class OnlineProtocol:
 
-    def __init__(self, runtime):
-	self.k = 64
+    def __init__(self, runtime, k):
+	self.k = k
 	self.delta = 0
 	self.runtime = runtime
 	self.ramdom_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
@@ -249,12 +249,12 @@ if len(args) == 0:
     parser.error("you must specify a config file")
 else:
     id, players = load_config(args[0])
-
+k = int(sys.argv[3])
 # Create a deferred Runtime and ask it to run our protocol when ready.
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
 pre_runtime = create_runtime(id, players, 1, options, runtime_class=runtime_class)
-pre_runtime.addCallback(OnlineProtocol)
+pre_runtime.addCallback(OnlineProtocol,k)
 pre_runtime.addErrback(errorHandler)
 
 # Start the Twisted event loop.
