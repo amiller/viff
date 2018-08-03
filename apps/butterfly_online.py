@@ -66,7 +66,7 @@ def record_start():
 
 
 def record_stop():
-
+    global start
     stop = time.time()
     print
     print "Total time used: %.3f sec" % (stop-start)
@@ -77,6 +77,7 @@ def record_stop():
         f.close()
     '''
     print "*" * 64
+    start = stop
     #return x
 
 
