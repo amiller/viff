@@ -106,8 +106,9 @@ class OnlineProtocol:
 	print "preprocess_ready"
 	record_start()
 	output =  self.permutation_network(self.input,self.k)
-	record_stop()
+	
 	print "shuffle done"
+	record_stop()
 	open_tx = [0 for i in range(self.k)]
 	for i in range(self.k):
 		open_tx[i] = self.runtime.open(output[i])
@@ -235,6 +236,9 @@ class OnlineProtocol:
 		content = content + str(share.result)[1:-1] + "\n"
 	FD.write(content)
 	FD.close()
+	print "open done"
+	record_stop()
+	self.runtime.print_transferred_data()
 	results = self.runtime.synchronize()
 	self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
