@@ -59,24 +59,23 @@ start = 0
 
 
 def record_start():
-    global start
-    start = time.time()
-    print "*" * 64
-    print "Started"
+	global start
+	start = time.time()
+	print "*" * 64
+	print "Started"
 
 
 def record_stop():
 
-    stop = time.time()
-    print
-    print "Total time used: %.3f sec" % (stop-start)
+	stop = time.time()
+	print "Total time used: %.3f sec" % (stop-start)
     '''
     if runtime.id == 1:
         f = open('time.txt', 'w')
         f.write(stop-start)
         f.close()
     '''
-    print "*" * 64
+	print "*" * 64
     #return x
 
 
