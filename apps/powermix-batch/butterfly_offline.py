@@ -167,7 +167,7 @@ if len(args) == 0:
     parser.error("you must specify a config file")
 else:
     id, players = load_config(args[0])
-k = int(sys.args[3])
+k = int(args[1])
 # Create a deferred Runtime and ask it to run our protocol when ready.
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
