@@ -69,14 +69,14 @@ def record_stop():
 
 	stop = time.time()
 	print "Total time used: %.3f sec" % (stop-start)
-    '''
+	'''
     if runtime.id == 1:
         f = open('time.txt', 'w')
         f.write(stop-start)
         f.close()
     '''
 	print "*" * 64
-    #return x
+
 
 
 
