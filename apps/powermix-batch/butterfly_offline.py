@@ -126,8 +126,8 @@ class OfflineProtocol:
 	record_stop()
 	self.write_to_file(self.ramdom_shares)
 	record_stop()
-        results = self.runtime.synchronize()
-        self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
+	results = self.runtime.synchronize()
+	self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
 	'''
 	for i in range(self.k * int(math.log(self.k,2))): 
