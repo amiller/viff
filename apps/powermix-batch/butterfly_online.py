@@ -91,7 +91,7 @@ class OnlineProtocol:
 	self.p = find_prime(2**256, blum=True)
 	self.Zp = GF(self.p)
 	self.write_index = 1
-	self.trigger = [Share(self.runtime,self.Zp) for i in range(int(2 ** (int(math.log(self.k,2)) - self.delta))]
+	self.trigger = [Share(self.runtime,self.Zp) for i in range(int(2 ** (int(math.log(self.k,2)) - self.delta)))]
 	print "begin allocating input shares(Party 1 will generate these shares)"
 
 	for i in range(self.k ):
