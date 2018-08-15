@@ -15,7 +15,7 @@ python butterfly_online.py --no-ssl player-$n.ini $butterk $butterl
 echo "butterfly done"
 python powermixing_online_phase1.py --no-ssl player-$n.ini $k $b
 cd cpp_phase2
-sh run-compute-power-sums-online.sh $k $n $b
+sh run-compute-power-sums-local.sh $k $n $b
 for batch in $( seq 1 $b )
 do
 	cp powers.sum_batch${batch} ../../powers.sum${n}_batch${batch}
