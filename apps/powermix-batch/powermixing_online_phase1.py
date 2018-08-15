@@ -95,8 +95,8 @@ class OnlineProtocol:
 			
 			FD = open(filename, "r")
 			line = FD.readline()
-			if int(line) != k:
-				print "k dismatch!! k in file is %d"%(int(line))
+			#if int(line) != k:
+			#	print "k dismatch!! k in file is %d"%(int(line))
 			line = FD.readline()
 			if int(line) != p:
 				print "prime dismatch!! prime in file is %d"%(int(line))
@@ -120,8 +120,8 @@ class OnlineProtocol:
 		if int(line) != p:
 			print "p dismatch!! p in file is %d"%(int(line))
 		line = FD.readline()
-		if int(line) != k:
-			print "k dismatch!! k in file is %d"%(int(line))
+		#if int(line) != k:
+		#	print "k dismatch!! k in file is %d"%(int(line))
 		self.Zp = GF(p)
 
 		line = FD.readline()
