@@ -205,7 +205,7 @@ class OnlineProtocol:
 	print p
 	line = FD.readline()
 	i = 0
-	while line:
+	while line and i<k:
 		#print i
 		self.ramdom_shares[i] = Share(self.runtime,self.Zp,self.Zp(int(line)))
 
