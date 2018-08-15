@@ -13,6 +13,7 @@ cd ~/viff/apps/powermix-batch/
 start_tm=`date +%s%N`;
 python butterfly_online.py --no-ssl player-$n.ini $butterk $butterl
 echo "butterfly done"
+sleep 2
 python powermixing_online_phase1.py --no-ssl player-$n.ini $k $b
 cd cpp_phase2
 sh run-compute-power-sums-local.sh $k $n $b
