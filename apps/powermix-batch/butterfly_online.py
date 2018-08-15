@@ -45,7 +45,7 @@ from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
-from fft import fft
+
 import sys
 from helperfunctions import interpolate_poly
 
