@@ -47,7 +47,7 @@ from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
 
 import sys
-from helperfunctions import interpolate_poly
+
 
 
 import sys
