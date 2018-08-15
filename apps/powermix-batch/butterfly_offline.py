@@ -84,79 +84,79 @@ def record_stop():
 
 class OfflineProtocol:
     # this is only for testing generating random -1/1 shares.
-    def __init__(self, runtime,k):
-	self.k =k
-	self.runtime = runtime
-	self.ramdom_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
-	self.p = find_prime(2**256, blum=True)
-	self.Zp = GF(self.p)
-	self.triggers = [Share(self.runtime,self.Zp) for i in range(self.k * int(math.log(self.k,2)))]
-	
-	#print self.p
-
-	n = self.runtime.num_players
-	t = self.runtime.threshold
-        T = n - 2*t
-
-	record_start()
-	for i in range(self.k * int(math.log(self.k,2))):
-		r = self.runtime.single_share_random(T,t,GF(self.p))
-
-		def random_ready(r,cnt):
+	def __init__(self, runtime,k):
+		self.k =k
+		self.runtime = runtime
+		self.ramdom_shares = [0 for i in range(self.k * int(math.log(self.k,2)))]
+		self.p = find_prime(2**256, blum=True)
+		self.Zp = GF(self.p)
+		self.triggers = [Share(self.runtime,self.Zp) for i in range(self.k * int(math.log(self.k,2)))]
 			
-			u = r[0] * r[0]
-			open_u = self.runtime.open(u)
+		#print self.p
 
-			open_u.addCallback(self.calculate_share,r[0],cnt)
-	        self.runtime.schedule_callback(r, random_ready,i)
+		n = self.runtime.num_players
+		t = self.runtime.threshold
+		T = n - 2*t
 
-	list = [self.triggers[i] for i in range(self.k * int(math.log(self.k,2)))]
-	result = gather_shares(list)
-	result.addCallback(self.preprocess_ready)
+		record_start()
+		for i in range(self.k * int(math.log(self.k,2))):
+			r = self.runtime.single_share_random(T,t,GF(self.p))
+
+			def random_ready(r,cnt):
+				
+				u = r[0] * r[0]
+				open_u = self.runtime.open(u)
+
+				open_u.addCallback(self.calculate_share,r[0],cnt)
+				self.runtime.schedule_callback(r, random_ready,i)
+
+		list = [self.triggers[i] for i in range(self.k * int(math.log(self.k,2)))]
+		result = gather_shares(list)
+		result.addCallback(self.preprocess_ready)
 
 
-    def calculate_share(self,result,r,i):
-	#print ""caculating shares
-	v = result**((-(self.p+1)/4)%(self.p - 1))
-	self.ramdom_shares[i] = r * v
-	self.triggers[i].callback(1)
+	def calculate_share(self,result,r,i):
+		#print ""caculating shares
+		v = result**((-(self.p+1)/4)%(self.p - 1))
+		self.ramdom_shares[i] = r * v
+		self.triggers[i].callback(1)
 	
-    def preprocess_ready(self,result):
-	print "preprocess_ready"
-	record_stop()
-	self.write_to_file(self.ramdom_shares)
-	record_stop()
-        results = self.runtime.synchronize()
-        self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
+	def preprocess_ready(self,result):
+		print "preprocess_ready"
+		record_stop()
+		self.write_to_file(self.ramdom_shares)
+		record_stop()
+		results = self.runtime.synchronize()
+		self.runtime.schedule_callback(results, lambda _: self.runtime.shutdown())
 
-	'''
-	for i in range(self.k * int(math.log(self.k,2))): 
-		open_1= self.runtime.open(self.ramdom_shares[i])
+		'''
+		for i in range(self.k * int(math.log(self.k,2))): 
+			open_1= self.runtime.open(self.ramdom_shares[i])
+			
+			open_1.addCallback(self.plainprint)
+		'''
+
+	def write_to_file(self,shares):
+		#print "here"
+		filename = "party" + str(self.runtime.id) + "_butterfly_random_share"
 		
-		open_1.addCallback(self.plainprint)
-	'''
+		FD = open(filename, "w")
 
-    def write_to_file(self,shares):
-	#print "here"
-	filename = "party" + str(self.runtime.id) + "_butterfly_random_share"
-	
-	FD = open(filename, "w")
+		content = str(self.k) + "\n" + str(self.p) + "\n"
+		for share in shares:
+			content = content + str(share.result)[1:-1] + "\n"
+		FD.write(content)
+		FD.close()
 
-	content = str(self.k) + "\n" + str(self.p) + "\n"
-	for share in shares:
-		content = content + str(share.result)[1:-1] + "\n"
-	FD.write(content)
-	FD.close()
+	def __generate_initial_random_values(self, field, b):
+		return [rand.randint(0, field.modulus - 1) for _ in range(b)]
 
-    def __generate_initial_random_values(self, field, b):
-        return [rand.randint(0, field.modulus - 1) for _ in range(b)]
+	def plainprint(self,result):
 
-    def plainprint(self,result):
-
-	print result
+		print result
 
 def errorHandler(failure):
-    print("Error: %s" % failure)
+	print("Error: %s" % failure)
 
 # Parse command line arguments.
 parser = OptionParser()
