@@ -45,9 +45,9 @@ from viff.comparison import Toft05Runtime
 from viff.config import load_config
 from viff.util import rand, find_prime
 from viff.active import BasicActiveRuntime, TriplesHyperinvertibleMatricesMixin
-
+from fft import fft
 import sys
-
+from helperfunctions import interpolate_poly
 
 
 import sys
@@ -59,24 +59,25 @@ start = 0
 
 
 def record_start():
-	global start
-	start = time.time()
-	print "*" * 64
-	print "Started"
+    global start
+    start = time.time()
+    print "*" * 64
+    print "Started"
 
 
 def record_stop():
 
-	stop = time.time()
-	print "Total time used: %.3f sec" % (stop-start)
-	'''
+    stop = time.time()
+    print
+    print "Total time used: %.3f sec" % (stop-start)
+    '''
     if runtime.id == 1:
         f = open('time.txt', 'w')
         f.write(stop-start)
         f.close()
     '''
-	print "*" * 64
-
+    print "*" * 64
+    #return x
 
 
 
@@ -166,7 +167,7 @@ if len(args) == 0:
     parser.error("you must specify a config file")
 else:
     id, players = load_config(args[0])
-k = int(sys.argv[3])
+k = int(args[3])
 # Create a deferred Runtime and ask it to run our protocol when ready.
 runtime_class = make_runtime_class(runtime_class=BasicActiveRuntime,
     mixins=[TriplesHyperinvertibleMatricesMixin])
