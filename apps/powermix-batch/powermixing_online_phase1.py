@@ -98,8 +98,8 @@ class OnlineProtocol:
 			#if int(line) != k:
 			#	print "k dismatch!! k in file is %d"%(int(line))
 			line = FD.readline()
-			if int(line) != p:
-				print "prime dismatch!! prime in file is %d"%(int(line))
+			#if int(line) != p:
+			#	print "prime dismatch!! prime in file is %d"%(int(line))
 			self.Zp = GF(p)
 
 			line = FD.readline()
@@ -117,8 +117,8 @@ class OnlineProtocol:
 		filename = "precompute-party%d.share" % (self.runtime.id)
 		FD = open(filename, "r")
 		line = FD.readline()
-		if int(line) != p:
-			print "p dismatch!! p in file is %d"%(int(line))
+		#if int(line) != p:
+		#	print "p dismatch!! p in file is %d"%(int(line))
 		line = FD.readline()
 		#if int(line) != k:
 		#	print "k dismatch!! k in file is %d"%(int(line))
@@ -141,7 +141,9 @@ class OnlineProtocol:
 		if not folder:                  
 			os.makedirs(path) 
 		for b in range(self.batch):
+			print "what"
 			for i in range(self.k):
+				print "how"
 				filename = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output/powermixing-online-phase1-output" + str(i+1) + "-batch" + str(b+1)
 
 				FD = open(filename, "w")
