@@ -95,8 +95,8 @@ class OnlineProtocol:
 			
 			FD = open(filename, "r")
 			line = FD.readline()
-			#if int(line) != k:
-			#	print "k dismatch!! k in file is %d"%(int(line))
+			if int(line) != k:
+				print "k dismatch!! k in file is %d"%(int(line))
 			line = FD.readline()
 			#if int(line) != p:
 			#	print "prime dismatch!! prime in file is %d"%(int(line))
@@ -141,21 +141,18 @@ class OnlineProtocol:
 		if not folder:                  
 			os.makedirs(path) 
 		for b in range(self.batch):
-			print "what"
+
 			for i in range(self.k):
-				print "how%d%d"%(b,i)
+
 				filename = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output/powermixing-online-phase1-output" + str(i+1) + "-batch" + str(b+1)
 
 				FD = open(filename, "w")
-				print "how!"
+
 				content =  str(self.p) + "\n" + str(self.inputs[b][i].result)[1:-1] + "\n" + str(self.a_minus_b[b][i].result)[1:-1] + "\n" + str(self.k) + "\n"
-				print "how!!"
-				ll = 0
+
+
 				for share in self.precomputed_powers[i]:
 					content = content + str(share.result)[1:-1] + "\n"
-					print "how%d"%(ll)
-					ll=ll+1
-				print "how!!!"
 				FD.write(content)
 				FD.close()
 		print "output to file finished"
