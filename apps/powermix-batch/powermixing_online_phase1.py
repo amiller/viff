@@ -150,8 +150,11 @@ class OnlineProtocol:
 				print "how!"
 				content =  str(self.p) + "\n" + str(self.inputs[b][i].result)[1:-1] + "\n" + str(self.a_minus_b[b][i].result)[1:-1] + "\n" + str(self.k) + "\n"
 				print "how!!"
+				ll = 0
 				for share in self.precomputed_powers[i]:
 					content = content + str(share.result)[1:-1] + "\n"
+					print "how%d"%(ll)
+					ll=ll+1
 				print "how!!!"
 				FD.write(content)
 				FD.close()
