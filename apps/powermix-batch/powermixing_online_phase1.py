@@ -143,15 +143,16 @@ class OnlineProtocol:
 		for b in range(self.batch):
 			print "what"
 			for i in range(self.k):
-				print "how"
+				print "how%d%d"%(b,i)
 				filename = "party" + str(self.runtime.id) + "-powermixing-online-phase1-output/powermixing-online-phase1-output" + str(i+1) + "-batch" + str(b+1)
 
 				FD = open(filename, "w")
-
+				print "how!"
 				content =  str(self.p) + "\n" + str(self.inputs[b][i].result)[1:-1] + "\n" + str(self.a_minus_b[b][i].result)[1:-1] + "\n" + str(self.k) + "\n"
-			
+				print "how!!"
 				for share in self.precomputed_powers[i]:
 					content = content + str(share.result)[1:-1] + "\n"
+				print "how!!!"
 				FD.write(content)
 				FD.close()
 		print "output to file finished"
