@@ -114,6 +114,8 @@ if __name__=="__main__":
 		
 			#print(result)
 			create_output(result,party_id,i)
+		else:
+			print("input error,skip")
 	record_stop()
 	print("output to file complete")
 	record_stop()
