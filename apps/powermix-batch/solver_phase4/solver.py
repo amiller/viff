@@ -109,10 +109,11 @@ if __name__=="__main__":
 	#print(inputs)
 	for i in range(batch):
 		result = solve(inputs[i])
-		print("calculation complete")
+		if result != None:
+			print("calculation complete")
 		
-		#print(result)
-		create_output(result,party_id,i)
+			#print(result)
+			create_output(result,party_id,i)
 	record_stop()
 	print("output to file complete")
 	record_stop()
